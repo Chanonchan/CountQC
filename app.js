@@ -34,6 +34,8 @@
     pctUnder: $("pctUnder"), pctIn: $("pctIn"), pctOver: $("pctOver"),
     underCount: $("underCount"), inCount: $("inCount"), overCount: $("overCount"),
     barUnder: $("barUnder"), barIn: $("barIn"), barOver: $("barOver"),
+    histogram: $("histogram"),
+    histLegend: $("histLegend"),
     allValuesList: $("allValuesList"),
     exportBtn: $("exportBtn"),
     // nav
@@ -146,7 +148,125 @@
     els.sumStd.textContent = s.n ? fmt(s.std) : "–";
 
     renderSpec(s);
+    renderHistogram(s);
     renderAllValues();
+  }
+
+  /* ---------- Histogram (frequency distribution) ---------- */
+  function niceWidth(range, target) {
+    if (range <= 0) return 1;
+    var raw = range / target;
+    var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var norm = raw / mag;
+    var nice;
+    if (norm < 1.5) nice = 1;
+    else if (norm < 3) nice = 2;
+    else if (norm < 7) nice = 5;
+    else nice = 10;
+    return nice * mag;
+  }
+
+  function decimalsFor(width) {
+    var d = Math.ceil(-Math.log10(width));
+    return d > 0 && isFinite(d) ? Math.min(d, 6) : 0;
+  }
+
+  function renderHistogram(s) {
+    var host = els.histogram;
+    host.innerHTML = "";
+    if (!s.n) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "No values yet.";
+      host.appendChild(empty);
+      els.histLegend.style.display = "none";
+      return;
+    }
+
+    var lsl = state.lsl === "" ? null : Number(state.lsl);
+    var usl = state.usl === "" ? null : Number(state.usl);
+    if (lsl !== null && !isFinite(lsl)) lsl = null;
+    if (usl !== null && !isFinite(usl)) usl = null;
+    var hasSpec = lsl !== null || usl !== null;
+    els.histLegend.style.display = hasSpec ? "flex" : "none";
+
+    // Choose bin width: aim for ~sqrt(n) bins, clamped 5..12.
+    var target = Math.min(12, Math.max(5, Math.ceil(Math.sqrt(s.n))));
+    var width = niceWidth(s.range, target);
+    var dec = decimalsFor(width);
+
+    // Align bins to a "nice" lower bound and build them (incl. empty bins).
+    var start = Math.floor(s.min / width) * width;
+    var count = Math.floor((s.max - start) / width + 1e-9) + 1;
+    if (count < 1) count = 1;
+    if (count > 60) count = 60; // safety cap
+    var bins = [];
+    for (var i = 0; i < count; i++) {
+      var lo = start + i * width;
+      bins.push({ lo: lo, hi: lo + width, mid: lo + width / 2, count: 0 });
+    }
+    for (var k = 0; k < state.values.length; k++) {
+      var idx = Math.floor((state.values[k] - start) / width + 1e-9);
+      if (idx < 0) idx = 0;
+      if (idx >= count) idx = count - 1;
+      bins[idx].count++;
+    }
+
+    var maxCount = 0;
+    bins.forEach(function (b) { if (b.count > maxCount) maxCount = b.count; });
+
+    function classify(mid) {
+      if (lsl !== null && mid < lsl) return "under";
+      if (usl !== null && mid > usl) return "over";
+      return "in";
+    }
+
+    function divider(label) {
+      var d = document.createElement("div");
+      d.className = "hist-divider";
+      var span = document.createElement("span");
+      span.textContent = label;
+      d.appendChild(span);
+      host.appendChild(d);
+    }
+
+    var prevClass = null;
+    bins.forEach(function (b) {
+      var cls = hasSpec ? classify(b.mid) : "in";
+      // Separator lines between under / in / over regions.
+      if (hasSpec && prevClass !== null) {
+        if (prevClass === "under" && cls !== "under" && lsl !== null) {
+          divider("LSL = " + fmt(lsl));
+        }
+        if (prevClass !== "over" && cls === "over" && usl !== null) {
+          divider("USL = " + fmt(usl));
+        }
+      }
+      prevClass = cls;
+
+      var row = document.createElement("div");
+      row.className = "hist-row hist-row--" + cls;
+
+      var label = document.createElement("span");
+      label.className = "hist-label";
+      label.textContent = b.lo.toFixed(dec);
+
+      var track = document.createElement("span");
+      track.className = "hist-track";
+      var fill = document.createElement("span");
+      fill.className = "hist-fill";
+      fill.style.width = maxCount ? (b.count / maxCount * 100) + "%" : "0%";
+      track.appendChild(fill);
+
+      var cnt = document.createElement("span");
+      cnt.className = "hist-count";
+      cnt.textContent = b.count;
+
+      row.appendChild(label);
+      row.appendChild(track);
+      row.appendChild(cnt);
+      host.appendChild(row);
+    });
   }
 
   function renderSpec(s) {
