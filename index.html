@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CountQC" />
+  <title>CountQC</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1 class="brand">Count<span>QC</span></h1>
+      <div class="rep-name" id="repName">New record</div>
+    </header>
+
+    <!-- ============ ENTRY PAGE ============ -->
+    <section class="page page--entry" id="pageEntry">
+      <div class="record-meta">
+        <input
+          class="meta-input"
+          id="specName"
+          type="text"
+          placeholder="Specification name (e.g. Bolt length mm)"
+          autocomplete="off" />
+      </div>
+
+      <div class="big-count">
+        <div class="big-count__num" id="bigCount">0</div>
+        <div class="big-count__label">replications entered</div>
+      </div>
+
+      <div class="quickstats" id="quickStats">
+        <div class="quickstat"><span class="quickstat__label">Avg</span><span class="quickstat__val" id="qsAvg">–</span></div>
+        <div class="quickstat"><span class="quickstat__label">Min</span><span class="quickstat__val" id="qsMin">–</span></div>
+        <div class="quickstat"><span class="quickstat__label">Max</span><span class="quickstat__val" id="qsMax">–</span></div>
+      </div>
+
+      <form class="entry-form" id="entryForm" autocomplete="off">
+        <input
+          class="entry-input"
+          id="entryInput"
+          type="text"
+          inputmode="decimal"
+          enterkeyhint="enter"
+          placeholder="Type a number, press Enter"
+          autocomplete="off" />
+        <button class="btn btn--add" type="submit" aria-label="Add value">Enter</button>
+      </form>
+
+      <p class="hint">
+        Tip: paste or type many at once separated by space, comma or new line —
+        e.g. <code>12.1 12.3 11.9</code> — then press Enter to add them all.
+      </p>
+
+      <ul class="values" id="valuesList"></ul>
+
+      <div class="entry-actions">
+        <button class="btn btn--ghost" id="undoBtn" type="button">Undo last</button>
+        <button class="btn btn--ghost btn--danger" id="clearBtn" type="button">Clear all</button>
+      </div>
+    </section>
+
+    <!-- ============ SUMMARY PAGE ============ -->
+    <section class="page page--summary hidden" id="pageSummary">
+      <h2 class="summary-title" id="summaryTitle">Summary</h2>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-card__label">Replications</span><span class="stat-card__val" id="sumCount">0</span></div>
+        <div class="stat-card"><span class="stat-card__label">Average</span><span class="stat-card__val" id="sumAvg">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Minimum</span><span class="stat-card__val" id="sumMin">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Maximum</span><span class="stat-card__val" id="sumMax">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Range</span><span class="stat-card__val" id="sumRange">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Std dev</span><span class="stat-card__val" id="sumStd">–</span></div>
+      </div>
+
+      <div class="spec-box">
+        <h3 class="spec-box__title">Specification limits</h3>
+        <div class="spec-inputs">
+          <label class="spec-field">
+            <span>Lower (LSL)</span>
+            <input id="lslInput" type="text" inputmode="decimal" placeholder="e.g. 11.8" autocomplete="off" />
+          </label>
+          <label class="spec-field">
+            <span>Upper (USL)</span>
+            <input id="uslInput" type="text" inputmode="decimal" placeholder="e.g. 12.4" autocomplete="off" />
+          </label>
+        </div>
+
+        <div class="spec-results" id="specResults">
+          <div class="spec-result spec-result--under">
+            <span class="spec-result__pct" id="pctUnder">–</span>
+            <span class="spec-result__label">Under spec<br><small id="underCount"></small></span>
+          </div>
+          <div class="spec-result spec-result--in">
+            <span class="spec-result__pct" id="pctIn">–</span>
+            <span class="spec-result__label">In spec<br><small id="inCount"></small></span>
+          </div>
+          <div class="spec-result spec-result--over">
+            <span class="spec-result__pct" id="pctOver">–</span>
+            <span class="spec-result__label">Over spec<br><small id="overCount"></small></span>
+          </div>
+        </div>
+        <div class="spec-bar" id="specBar" aria-hidden="true">
+          <div class="spec-bar__seg spec-bar__seg--under" id="barUnder"></div>
+          <div class="spec-bar__seg spec-bar__seg--in" id="barIn"></div>
+          <div class="spec-bar__seg spec-bar__seg--over" id="barOver"></div>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <button class="btn btn--ghost" id="exportBtn" type="button">Export CSV</button>
+      </div>
+
+      <div class="all-values">
+        <h3 class="all-values__title">All replications</h3>
+        <ol class="all-values__list" id="allValuesList"></ol>
+      </div>
+    </section>
+
+    <!-- ============ BOTTOM NAV ============ -->
+    <nav class="tabbar">
+      <button class="tab is-active" id="tabEntry" type="button">
+        <span class="tab__icon">＃</span><span class="tab__text">Enter</span>
+      </button>
+      <button class="tab" id="tabSummary" type="button">
+        <span class="tab__icon">∑</span><span class="tab__text">Summary</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
