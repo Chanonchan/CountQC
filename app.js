@@ -178,17 +178,25 @@
     return Number((Math.round(v / step) * step).toFixed(dec));
   }
 
-  // Build the value-button range from the spec, with ~5 steps of margin.
+  var GRID_STEP = 0.1;          // value buttons are always 0.1 apart
+  var GRID_MARGIN_STEPS = 5;    // how many buttons to show beyond each limit
+
+  // Set the limits + value-button range from a low/high pair.
+  function applyLimits(lo, hi) {
+    if (lo > hi) { var t = lo; lo = hi; hi = t; }
+    state.lsl = fmt(lo);
+    state.usl = fmt(hi);
+    state.step = GRID_STEP;
+    var dec = 1;
+    state.gridMin = snap(lo - GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, dec);
+    state.gridMax = snap(hi + GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, dec);
+  }
+
+  // Build the value buttons from the spec text (e.g. "10-10.5").
   function initGridFromSpec() {
     var r = parseRange(state.specName);
     if (!r) { state.gridMin = state.gridMax = state.step = null; return; }
-    state.lsl = String(r.lo);
-    state.usl = String(r.hi);
-    var step = inferStep(r.hi - r.lo);
-    var dec = decimalsFor(step);
-    state.step = step;
-    state.gridMin = snap(r.lo - 5 * step, step, dec);
-    state.gridMax = snap(r.hi + 5 * step, step, dec);
+    applyLimits(r.lo, r.hi);
   }
 
   function gridValues() {
@@ -704,13 +712,12 @@
       save();
     });
 
+    // Spec range (quick tab) -> limits + buttons + summary LSL/USL.
     els.specName.addEventListener("input", function () {
       state.specName = els.specName.value;
-      // Re-generate the value buttons only when the parsed range changes,
-      // so manual grid extensions aren't wiped on every keystroke.
       var r = parseRange(state.specName);
-      if (r && (String(r.lo) !== state.lsl || String(r.hi) !== state.usl)) {
-        initGridFromSpec();
+      if (r && (fmt(r.lo) !== state.lsl || fmt(r.hi) !== state.usl)) {
+        applyLimits(r.lo, r.hi);
         els.lslInput.value = state.lsl;
         els.uslInput.value = state.usl;
       }
@@ -718,16 +725,22 @@
       renderValueGrid();
     });
 
-    els.lslInput.addEventListener("input", function () {
+    // Summary LSL/USL -> spec range + buttons (kept in sync both ways).
+    function onLimitInput() {
       state.lsl = els.lslInput.value.trim();
-      save();
-      renderSummary();
-    });
-    els.uslInput.addEventListener("input", function () {
       state.usl = els.uslInput.value.trim();
+      var lo = Number(state.lsl), hi = Number(state.usl);
+      if (state.lsl !== "" && state.usl !== "" && isFinite(lo) && isFinite(hi)) {
+        applyLimits(lo, hi);
+        state.specName = state.lsl + "-" + state.usl;
+        els.specName.value = state.specName;
+        renderValueGrid();
+      }
       save();
       renderSummary();
-    });
+    }
+    els.lslInput.addEventListener("input", onLimitInput);
+    els.uslInput.addEventListener("input", onLimitInput);
 
     els.tabEntry.addEventListener("click", function () { showPage("entry"); });
     els.tabSummary.addEventListener("click", function () { showPage("summary"); });
