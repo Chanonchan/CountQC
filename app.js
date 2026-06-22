@@ -7,7 +7,8 @@
 
   /* ---------- State ---------- */
   var state = {
-    specName: "",
+    recordName: "",     // free-text name shown in the header
+    specName: "",       // spec range text, e.g. "10.0-12.0"
     values: [],   // array of numbers, in entry order
     lsl: "",
     usl: "",
@@ -22,7 +23,7 @@
 
   var els = {
     specName: $("specName"),
-    repName: $("repName"),
+    recordName: $("recordName"),
     bigCount: $("bigCount"),
     qsAvg: $("qsAvg"), qsMin: $("qsMin"), qsMax: $("qsMax"),
     modeQuick: $("modeQuick"), modeManual: $("modeManual"),
@@ -64,6 +65,7 @@
       if (!raw) return;
       var parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.values)) {
+        state.recordName = parsed.recordName || "";
         state.specName = parsed.specName || "";
         state.values = parsed.values.filter(function (n) { return typeof n === "number" && isFinite(n); });
         state.lsl = parsed.lsl || "";
@@ -141,7 +143,6 @@
     els.qsAvg.textContent = s.n ? fmt(s.avg) : "–";
     els.qsMin.textContent = s.n ? fmt(s.min) : "–";
     els.qsMax.textContent = s.n ? fmt(s.max) : "–";
-    els.repName.textContent = state.specName.trim() || "New record";
   }
 
   function renderEntry() {
@@ -269,9 +270,8 @@
   /* ---------- Render: summary page ---------- */
   function renderSummary() {
     var s = stats(state.values);
-    els.summaryTitle.textContent = state.specName.trim()
-      ? "Summary — " + state.specName.trim()
-      : "Summary";
+    var title = state.recordName.trim() || state.specName.trim();
+    els.summaryTitle.textContent = title ? "Summary — " + title : "Summary";
 
     els.sumCount.textContent = s.n || 0;
     els.sumAvg.textContent = s.n ? fmt(s.avg) : "–";
@@ -581,6 +581,7 @@
     }
     var s = stats(state.values);
     lines.push("");
+    lines.push("name," + (state.recordName.replace(/,/g, " ") || ""));
     lines.push("specification," + (state.specName.replace(/,/g, " ") || ""));
     lines.push("count," + (s.n || 0));
     lines.push("average," + (s.n ? s.avg : ""));
@@ -621,7 +622,8 @@
     }
     var csv = buildCSV();
     var filename =
-      (state.specName.trim() || "record_qc").replace(/[^a-z0-9]+/gi, "_").toLowerCase() + ".csv";
+      (state.recordName.trim() || state.specName.trim() || "record_qc")
+        .replace(/[^a-z0-9]+/gi, "_").toLowerCase() + ".csv";
 
     // Prefer the native share sheet on mobile (lets you "Save to Files",
     // mail, message, etc.) — a blob download often fails inside an
@@ -663,6 +665,7 @@
   function init() {
     load();
 
+    els.recordName.value = state.recordName;
     els.specName.value = state.specName;
     els.lslInput.value = state.lsl;
     els.uslInput.value = state.usl;
@@ -696,9 +699,13 @@
     els.addLower.addEventListener("click", function () { extendGrid(-1); });
     els.addHigher.addEventListener("click", function () { extendGrid(1); });
 
+    els.recordName.addEventListener("input", function () {
+      state.recordName = els.recordName.value;
+      save();
+    });
+
     els.specName.addEventListener("input", function () {
       state.specName = els.specName.value;
-      els.repName.textContent = state.specName.trim() || "New record";
       // Re-generate the value buttons only when the parsed range changes,
       // so manual grid extensions aren't wiped on every keystroke.
       var r = parseRange(state.specName);
