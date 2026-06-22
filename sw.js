@@ -1,6 +1,6 @@
 /* Record QC service worker — network-first so updates always reach the
  * device, with a cache fallback for offline use. */
-var CACHE = "recordqc-v3";
+var CACHE = "recordqc-v4";
 var ASSETS = [
   "./",
   "./index.html",

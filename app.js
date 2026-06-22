@@ -113,26 +113,6 @@
     els.qsMax.textContent = s.n ? fmt(s.max) : "–";
 
     els.repName.textContent = state.specName.trim() || "New record";
-
-    // chips, most recent first
-    els.valuesList.innerHTML = "";
-    for (var i = state.values.length - 1; i >= 0; i--) {
-      var li = document.createElement("li");
-      var idx = document.createElement("span");
-      idx.className = "idx";
-      idx.textContent = "#" + (i + 1);
-      var val = document.createElement("span");
-      val.textContent = fmt(state.values[i]);
-      var rm = document.createElement("button");
-      rm.type = "button";
-      rm.textContent = "×";
-      rm.setAttribute("aria-label", "Remove value");
-      rm.dataset.index = String(i);
-      li.appendChild(idx);
-      li.appendChild(val);
-      li.appendChild(rm);
-      els.valuesList.appendChild(li);
-    }
   }
 
   /* ---------- Render: summary page ---------- */
@@ -442,7 +422,7 @@
     }
   }
 
-  function exportCSV() {
+  function buildCSV() {
     var lines = ["replication,value"];
     for (var i = 0; i < state.values.length; i++) {
       lines.push((i + 1) + "," + state.values[i]);
@@ -458,17 +438,57 @@
     lines.push("std_dev," + (s.n ? s.std : ""));
     lines.push("LSL," + state.lsl);
     lines.push("USL," + state.usl);
+    return lines.join("\n");
+  }
 
-    var blob = new Blob([lines.join("\n")], { type: "text/csv" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    var name = (state.specName.trim() || "countqc").replace(/[^a-z0-9]+/gi, "_").toLowerCase();
-    a.href = url;
-    a.download = name + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  // Desktop fallback: trigger a file download, or copy to clipboard.
+  function downloadCSV(csv, filename) {
+    try {
+      var blob = new Blob([csv], { type: "text/csv" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(csv);
+        window.alert("Export copied to clipboard.");
+      }
+    }
+  }
+
+  function exportCSV() {
+    if (state.values.length === 0) {
+      window.alert("Nothing to export yet — add some replications first.");
+      return;
+    }
+    var csv = buildCSV();
+    var filename =
+      (state.specName.trim() || "record_qc").replace(/[^a-z0-9]+/gi, "_").toLowerCase() + ".csv";
+
+    // Prefer the native share sheet on mobile (lets you "Save to Files",
+    // mail, message, etc.) — a blob download often fails inside an
+    // installed PWA on iOS.
+    try {
+      var file = new File([csv], filename, { type: "text/csv" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "Record QC export" })
+          .catch(function () { /* user cancelled — no-op */ });
+        return;
+      }
+    } catch (e) { /* File/share unsupported — fall through */ }
+
+    if (navigator.share) {
+      navigator.share({ title: filename, text: csv })
+        .catch(function () { downloadCSV(csv, filename); });
+      return;
+    }
+
+    downloadCSV(csv, filename);
   }
 
   /* ---------- Navigation ---------- */
@@ -502,10 +522,12 @@
     if (els.keypad) els.keypad.addEventListener("click", onKeypad);
     if (els.keypadActions) els.keypadActions.addEventListener("click", onKeypad);
 
-    els.valuesList.addEventListener("click", function (e) {
-      var btn = e.target.closest("button[data-index]");
-      if (btn) removeAt(parseInt(btn.dataset.index, 10));
-    });
+    if (els.valuesList) {
+      els.valuesList.addEventListener("click", function (e) {
+        var btn = e.target.closest("button[data-index]");
+        if (btn) removeAt(parseInt(btn.dataset.index, 10));
+      });
+    }
 
     els.undoBtn.addEventListener("click", undoLast);
     els.clearBtn.addEventListener("click", clearAll);

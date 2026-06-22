@@ -21,24 +21,18 @@
 
     <!-- ============ ENTRY PAGE ============ -->
     <section class="page page--entry" id="pageEntry">
-      <div class="record-meta">
-        <input
-          class="meta-input"
-          id="specName"
-          type="text"
-          placeholder="Specification name (e.g. Bolt length mm)"
-          autocomplete="off" />
-      </div>
+      <input
+        class="meta-input"
+        id="specName"
+        type="text"
+        placeholder="Specification name (e.g. Bolt length mm)"
+        autocomplete="off" />
 
-      <div class="big-count">
-        <div class="big-count__num" id="bigCount">0</div>
-        <div class="big-count__label">replications entered</div>
-      </div>
-
-      <div class="quickstats" id="quickStats">
-        <div class="quickstat"><span class="quickstat__label">Avg</span><span class="quickstat__val" id="qsAvg">–</span></div>
-        <div class="quickstat"><span class="quickstat__label">Min</span><span class="quickstat__val" id="qsMin">–</span></div>
-        <div class="quickstat"><span class="quickstat__label">Max</span><span class="quickstat__val" id="qsMax">–</span></div>
+      <div class="statline">
+        <div class="statline__item"><b id="bigCount">0</b><span>reps</span></div>
+        <div class="statline__item"><b id="qsAvg">–</b><span>avg</span></div>
+        <div class="statline__item"><b id="qsMin">–</b><span>min</span></div>
+        <div class="statline__item"><b id="qsMax">–</b><span>max</span></div>
       </div>
 
       <form class="entry-form" id="entryForm" autocomplete="off">
@@ -72,14 +66,6 @@
         <button type="button" class="btn btn--ghost key-back" data-action="back" aria-label="Backspace">⌫</button>
         <button type="button" class="btn btn--add key-enter" data-action="enter">Enter</button>
       </div>
-
-      <p class="hint">
-        Tap digits like a calculator, then <strong>Enter</strong> to record. Use
-        <strong>Next #</strong> to queue several numbers before pressing Enter — or
-        paste many at once (e.g. <code>12.1 12.3 11.9</code>).
-      </p>
-
-      <ul class="values" id="valuesList"></ul>
 
       <div class="entry-actions">
         <button class="btn btn--ghost" id="undoBtn" type="button">Undo last</button>

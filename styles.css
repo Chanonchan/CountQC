@@ -58,6 +58,43 @@ html, body {
 }
 .hidden { display: none !important; }
 
+/* Entry page: fit the screen like a calculator, no scrolling. */
+.page--entry {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+}
+.page--entry > * { flex: 0 0 auto; }
+
+.statline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 8px 6px;
+  box-shadow: var(--shadow);
+}
+.statline__item { text-align: center; }
+.statline__item b {
+  display: block;
+  font-size: 19px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.statline__item:first-child b { color: var(--teal); }
+.statline__item span {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.page--entry .entry-actions .btn { padding: 10px; font-size: 14px; }
+
 /* ---------- Record meta ---------- */
 .record-meta { margin-bottom: 14px; }
 .meta-input {
@@ -114,13 +151,16 @@ html, body {
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
   gap: 8px;
-  margin-bottom: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .key {
   font-size: 24px;
   font-weight: 700;
-  padding: 18px 0;
+  padding: 0;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card);
@@ -133,7 +173,7 @@ html, body {
 .key:active { transform: scale(0.95); background: #e2e8f0; }
 .key--fn { color: var(--muted); }
 
-.keypad-actions { display: flex; gap: 8px; margin-bottom: 14px; }
+.keypad-actions { display: flex; gap: 8px; }
 .key-space { flex: 1.2; font-size: 15px; }
 .key-back { flex: 1; font-size: 20px; }
 .key-enter { flex: 2; }
