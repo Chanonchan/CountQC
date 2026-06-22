@@ -95,6 +95,80 @@ html, body {
 
 .page--entry .entry-actions .btn { padding: 10px; font-size: 14px; }
 
+/* Mode toggle (Quick tap / Manual) */
+.mode-toggle {
+  display: flex;
+  background: var(--line);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+.mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.mode-btn.is-active { background: var(--card); color: var(--teal); box-shadow: var(--shadow); }
+
+/* Entry panes fill remaining height */
+.entry-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Quick-tap value grid */
+.extend {
+  flex: 0 0 auto;
+  border: 1px dashed var(--teal);
+  background: var(--card);
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.extend:active { background: #e2e8f0; }
+.value-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-content: start;
+  padding: 2px;
+}
+.vbtn {
+  padding: 14px 0;
+  font-size: 18px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.05s ease, background 0.12s ease;
+}
+.vbtn:active { transform: scale(0.94); }
+.vbtn.is-hit { background: var(--teal); color: #fff; border-color: var(--teal); }
+.vbtn--under { border-color: var(--under); color: var(--under); }
+.vbtn--over { border-color: var(--over); color: var(--over); }
+.vbtn--in { border-color: var(--in); color: var(--in); }
+.quick-hint { flex: 0 0 auto; font-size: 12.5px; color: var(--muted); margin: 2px; text-align: center; }
+.quick-hint code { background: var(--line); padding: 1px 5px; border-radius: 5px; }
+
 /* ---------- Record meta ---------- */
 .record-meta { margin-bottom: 14px; }
 .meta-input {

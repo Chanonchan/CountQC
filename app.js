@@ -10,7 +10,11 @@
     specName: "",
     values: [],   // array of numbers, in entry order
     lsl: "",
-    usl: ""
+    usl: "",
+    mode: "quick",      // "quick" (value buttons) or "manual" (keypad)
+    gridMin: null,      // lowest value button
+    gridMax: null,      // highest value button
+    step: null          // spacing between value buttons
   };
 
   /* ---------- Element refs ---------- */
@@ -21,6 +25,10 @@
     repName: $("repName"),
     bigCount: $("bigCount"),
     qsAvg: $("qsAvg"), qsMin: $("qsMin"), qsMax: $("qsMax"),
+    modeQuick: $("modeQuick"), modeManual: $("modeManual"),
+    quickPane: $("quickPane"), manualPane: $("manualPane"),
+    valueGrid: $("valueGrid"), addLower: $("addLower"), addHigher: $("addHigher"),
+    quickHint: $("quickHint"),
     entryForm: $("entryForm"),
     entryInput: $("entryInput"),
     keypad: $("keypad"),
@@ -31,7 +39,8 @@
     // summary
     summaryTitle: $("summaryTitle"),
     sumCount: $("sumCount"), sumAvg: $("sumAvg"), sumMin: $("sumMin"),
-    sumMax: $("sumMax"), sumRange: $("sumRange"), sumStd: $("sumStd"),
+    sumMax: $("sumMax"), sumRange: $("sumRange"),
+    sumMedian: $("sumMedian"), sumMode: $("sumMode"),
     lslInput: $("lslInput"), uslInput: $("uslInput"),
     pctUnder: $("pctUnder"), pctIn: $("pctIn"), pctOver: $("pctOver"),
     underCount: $("underCount"), inCount: $("inCount"), overCount: $("overCount"),
@@ -59,6 +68,10 @@
         state.values = parsed.values.filter(function (n) { return typeof n === "number" && isFinite(n); });
         state.lsl = parsed.lsl || "";
         state.usl = parsed.usl || "";
+        state.mode = parsed.mode === "manual" ? "manual" : "quick";
+        state.gridMin = typeof parsed.gridMin === "number" ? parsed.gridMin : null;
+        state.gridMax = typeof parsed.gridMax === "number" ? parsed.gridMax : null;
+        state.step = typeof parsed.step === "number" ? parsed.step : null;
       }
     } catch (e) { /* ignore */ }
   }
@@ -87,7 +100,24 @@
     for (var j = 0; j < n; j++) { var d = arr[j] - avg; sq += d * d; }
     // Sample standard deviation (n-1); falls back to 0 when n === 1.
     var std = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
-    return { n: n, sum: sum, avg: avg, min: min, max: max, range: max - min, std: std };
+
+    var sorted = arr.slice().sort(function (a, b) { return a - b; });
+    var mid = Math.floor(n / 2);
+    var median = n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+
+    // Mode: most frequent value. Ties resolve to the smallest. No repeat → null.
+    var counts = {}, modeVal = null, modeCount = 0;
+    for (var k = 0; k < n; k++) {
+      var key = sorted[k];
+      counts[key] = (counts[key] || 0) + 1;
+      if (counts[key] > modeCount) { modeCount = counts[key]; modeVal = key; }
+    }
+    var mode = modeCount > 1 ? modeVal : null;
+
+    return {
+      n: n, sum: sum, avg: avg, min: min, max: max, range: max - min,
+      std: std, median: median, mode: mode, modeCount: modeCount
+    };
   }
 
   /* ---------- Parse user input (one or many numbers) ---------- */
@@ -105,14 +135,135 @@
   }
 
   /* ---------- Render: entry page ---------- */
-  function renderEntry() {
+  function updateStatline() {
     var s = stats(state.values);
     els.bigCount.textContent = state.values.length;
     els.qsAvg.textContent = s.n ? fmt(s.avg) : "–";
     els.qsMin.textContent = s.n ? fmt(s.min) : "–";
     els.qsMax.textContent = s.n ? fmt(s.max) : "–";
-
     els.repName.textContent = state.specName.trim() || "New record";
+  }
+
+  function renderEntry() {
+    updateStatline();
+    renderModePanes();
+    renderValueGrid();
+  }
+
+  /* ---------- Quick-tap value buttons ---------- */
+  // Parse a spec like "8.50-9.00" (or "8.5 to 9") into low/high.
+  function parseRange(text) {
+    var m = String(text || "").match(/(\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)/i);
+    if (!m) return null;
+    var lo = parseFloat(m[1]), hi = parseFloat(m[2]);
+    if (!isFinite(lo) || !isFinite(hi)) return null;
+    if (lo > hi) { var t = lo; lo = hi; hi = t; }
+    return { lo: lo, hi: hi };
+  }
+
+  function inferStep(range) {
+    if (range <= 0) return 0.1;
+    var raw = range / 5;
+    var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var nrm = raw / mag, nice;
+    if (nrm < 1.5) nice = 1;
+    else if (nrm < 3) nice = 2;
+    else if (nrm < 7) nice = 5;
+    else nice = 10;
+    return nice * mag;
+  }
+
+  function snap(v, step, dec) {
+    return Number((Math.round(v / step) * step).toFixed(dec));
+  }
+
+  // Build the value-button range from the spec, with ~5 steps of margin.
+  function initGridFromSpec() {
+    var r = parseRange(state.specName);
+    if (!r) { state.gridMin = state.gridMax = state.step = null; return; }
+    state.lsl = String(r.lo);
+    state.usl = String(r.hi);
+    var step = inferStep(r.hi - r.lo);
+    var dec = decimalsFor(step);
+    state.step = step;
+    state.gridMin = snap(r.lo - 5 * step, step, dec);
+    state.gridMax = snap(r.hi + 5 * step, step, dec);
+  }
+
+  function gridValues() {
+    if (state.step == null || state.gridMin == null || state.gridMax == null) return [];
+    var dec = decimalsFor(state.step);
+    var n = Math.round((state.gridMax - state.gridMin) / state.step);
+    if (n < 0) n = 0;
+    if (n > 400) n = 400; // safety cap
+    var out = [];
+    for (var i = 0; i <= n; i++) {
+      out.push(Number((state.gridMin + i * state.step).toFixed(dec)));
+    }
+    return out;
+  }
+
+  function classForValue(v) {
+    var lsl = state.lsl === "" ? null : Number(state.lsl);
+    var usl = state.usl === "" ? null : Number(state.usl);
+    if (lsl !== null && isFinite(lsl) && v < lsl) return "vbtn--under";
+    if (usl !== null && isFinite(usl) && v > usl) return "vbtn--over";
+    if ((lsl !== null && isFinite(lsl)) || (usl !== null && isFinite(usl))) return "vbtn--in";
+    return "";
+  }
+
+  function renderValueGrid() {
+    var vals = gridValues();
+    var hasGrid = vals.length > 0;
+    var dec = state.step != null ? decimalsFor(state.step) : 0;
+    els.valueGrid.innerHTML = "";
+    els.quickHint.style.display = hasGrid ? "none" : "";
+    els.addLower.style.display = hasGrid ? "" : "none";
+    els.addHigher.style.display = hasGrid ? "" : "none";
+
+    for (var i = 0; i < vals.length; i++) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "vbtn " + classForValue(vals[i]);
+      b.textContent = vals[i].toFixed(dec); // consistent decimals, e.g. 8.0
+      b.dataset.val = String(vals[i]);
+      els.valueGrid.appendChild(b);
+    }
+  }
+
+  function renderModePanes() {
+    var quick = state.mode !== "manual";
+    els.quickPane.classList.toggle("hidden", !quick);
+    els.manualPane.classList.toggle("hidden", quick);
+    els.modeQuick.classList.toggle("is-active", quick);
+    els.modeManual.classList.toggle("is-active", !quick);
+  }
+
+  function setMode(m) {
+    state.mode = m === "manual" ? "manual" : "quick";
+    save();
+    renderModePanes();
+    if (state.mode === "quick") renderValueGrid();
+    else els.entryInput.focus();
+  }
+
+  function recordValue(v, btn) {
+    state.values.push(v);
+    save();
+    updateStatline();
+    if (btn) {
+      btn.classList.add("is-hit");
+      setTimeout(function () { btn.classList.remove("is-hit"); }, 180);
+    }
+  }
+
+  function extendGrid(dir) {
+    if (state.step == null) return;
+    var dec = decimalsFor(state.step);
+    if (dir < 0) state.gridMin = Number((state.gridMin - state.step).toFixed(dec));
+    else state.gridMax = Number((state.gridMax + state.step).toFixed(dec));
+    save();
+    renderValueGrid();
   }
 
   /* ---------- Render: summary page ---------- */
@@ -124,10 +275,11 @@
 
     els.sumCount.textContent = s.n || 0;
     els.sumAvg.textContent = s.n ? fmt(s.avg) : "–";
+    els.sumMedian.textContent = s.n ? fmt(s.median) : "–";
+    els.sumMode.textContent = s.n ? (s.mode === null ? "—" : fmt(s.mode)) : "–";
     els.sumMin.textContent = s.n ? fmt(s.min) : "–";
     els.sumMax.textContent = s.n ? fmt(s.max) : "–";
     els.sumRange.textContent = s.n ? fmt(s.range) : "–";
-    els.sumStd.textContent = s.n ? fmt(s.std) : "–";
 
     renderSpec(s);
     renderHistogram(s);
@@ -340,7 +492,7 @@
     for (var i = 0; i < nums.length; i++) state.values.push(nums[i]);
     els.entryInput.value = "";
     save();
-    renderAll();
+    updateStatline();
     els.entryInput.focus();
   }
 
@@ -432,10 +584,11 @@
     lines.push("specification," + (state.specName.replace(/,/g, " ") || ""));
     lines.push("count," + (s.n || 0));
     lines.push("average," + (s.n ? s.avg : ""));
+    lines.push("median," + (s.n ? s.median : ""));
+    lines.push("mode," + (s.n && s.mode !== null ? s.mode : ""));
     lines.push("min," + (s.n ? s.min : ""));
     lines.push("max," + (s.n ? s.max : ""));
     lines.push("range," + (s.n ? s.range : ""));
-    lines.push("std_dev," + (s.n ? s.std : ""));
     lines.push("LSL," + state.lsl);
     lines.push("USL," + state.usl);
     return lines.join("\n");
@@ -499,7 +652,7 @@
     els.tabEntry.classList.toggle("is-active", entry);
     els.tabSummary.classList.toggle("is-active", !entry);
     if (entry) {
-      els.entryInput.focus();
+      if (state.mode === "manual") els.entryInput.focus();
     } else {
       renderSummary();
     }
@@ -533,10 +686,29 @@
     els.clearBtn.addEventListener("click", clearAll);
     els.exportBtn.addEventListener("click", exportCSV);
 
+    els.modeQuick.addEventListener("click", function () { setMode("quick"); });
+    els.modeManual.addEventListener("click", function () { setMode("manual"); });
+
+    els.valueGrid.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-val]");
+      if (btn) recordValue(Number(btn.dataset.val), btn);
+    });
+    els.addLower.addEventListener("click", function () { extendGrid(-1); });
+    els.addHigher.addEventListener("click", function () { extendGrid(1); });
+
     els.specName.addEventListener("input", function () {
       state.specName = els.specName.value;
-      save();
       els.repName.textContent = state.specName.trim() || "New record";
+      // Re-generate the value buttons only when the parsed range changes,
+      // so manual grid extensions aren't wiped on every keystroke.
+      var r = parseRange(state.specName);
+      if (r && (String(r.lo) !== state.lsl || String(r.hi) !== state.usl)) {
+        initGridFromSpec();
+        els.lslInput.value = state.lsl;
+        els.uslInput.value = state.usl;
+      }
+      save();
+      renderValueGrid();
     });
 
     els.lslInput.addEventListener("input", function () {
@@ -552,6 +724,9 @@
 
     els.tabEntry.addEventListener("click", function () { showPage("entry"); });
     els.tabSummary.addEventListener("click", function () { showPage("summary"); });
+
+    // First load: if a spec range exists but the grid wasn't built yet, build it.
+    if (state.step == null && parseRange(state.specName)) initGridFromSpec();
 
     renderAll();
   }

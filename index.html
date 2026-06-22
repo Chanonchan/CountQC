@@ -10,7 +10,7 @@
   <title>Record QC</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -25,8 +25,13 @@
         class="meta-input"
         id="specName"
         type="text"
-        placeholder="Specification name (e.g. Bolt length mm)"
+        placeholder="Specification, e.g. 8.50-9.00"
         autocomplete="off" />
+
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn is-active" id="modeQuick">Quick tap</button>
+        <button type="button" class="mode-btn" id="modeManual">Manual</button>
+      </div>
 
       <div class="statline">
         <div class="statline__item"><b id="bigCount">0</b><span>reps</span></div>
@@ -35,36 +40,49 @@
         <div class="statline__item"><b id="qsMax">–</b><span>max</span></div>
       </div>
 
-      <form class="entry-form" id="entryForm" autocomplete="off">
-        <input
-          class="entry-input"
-          id="entryInput"
-          type="text"
-          inputmode="none"
-          enterkeyhint="enter"
-          placeholder="Tap numbers below"
-          autocomplete="off" />
-      </form>
-
-      <div class="keypad" id="keypad">
-        <button type="button" class="key" data-key="7">7</button>
-        <button type="button" class="key" data-key="8">8</button>
-        <button type="button" class="key" data-key="9">9</button>
-        <button type="button" class="key" data-key="4">4</button>
-        <button type="button" class="key" data-key="5">5</button>
-        <button type="button" class="key" data-key="6">6</button>
-        <button type="button" class="key" data-key="1">1</button>
-        <button type="button" class="key" data-key="2">2</button>
-        <button type="button" class="key" data-key="3">3</button>
-        <button type="button" class="key key--fn" data-action="sign" aria-label="Toggle negative">±</button>
-        <button type="button" class="key" data-key="0">0</button>
-        <button type="button" class="key" data-key="." aria-label="Decimal point">.</button>
+      <!-- QUICK-TAP MODE -->
+      <div class="entry-pane" id="quickPane">
+        <button type="button" class="extend" id="addLower">＋ add lower value</button>
+        <div class="value-grid" id="valueGrid"></div>
+        <button type="button" class="extend" id="addHigher">＋ add higher value</button>
+        <p class="quick-hint" id="quickHint">
+          Type a spec range above (e.g. <code>8.50-9.00</code>) to get tap buttons.
+        </p>
       </div>
 
-      <div class="keypad-actions" id="keypadActions">
-        <button type="button" class="btn btn--ghost key-space" data-action="space">Next #</button>
-        <button type="button" class="btn btn--ghost key-back" data-action="back" aria-label="Backspace">⌫</button>
-        <button type="button" class="btn btn--add key-enter" data-action="enter">Enter</button>
+      <!-- MANUAL (KEYPAD) MODE -->
+      <div class="entry-pane hidden" id="manualPane">
+        <form class="entry-form" id="entryForm" autocomplete="off">
+          <input
+            class="entry-input"
+            id="entryInput"
+            type="text"
+            inputmode="none"
+            enterkeyhint="enter"
+            placeholder="Tap numbers below"
+            autocomplete="off" />
+        </form>
+
+        <div class="keypad" id="keypad">
+          <button type="button" class="key" data-key="7">7</button>
+          <button type="button" class="key" data-key="8">8</button>
+          <button type="button" class="key" data-key="9">9</button>
+          <button type="button" class="key" data-key="4">4</button>
+          <button type="button" class="key" data-key="5">5</button>
+          <button type="button" class="key" data-key="6">6</button>
+          <button type="button" class="key" data-key="1">1</button>
+          <button type="button" class="key" data-key="2">2</button>
+          <button type="button" class="key" data-key="3">3</button>
+          <button type="button" class="key key--fn" data-action="sign" aria-label="Toggle negative">±</button>
+          <button type="button" class="key" data-key="0">0</button>
+          <button type="button" class="key" data-key="." aria-label="Decimal point">.</button>
+        </div>
+
+        <div class="keypad-actions" id="keypadActions">
+          <button type="button" class="btn btn--ghost key-space" data-action="space">Next #</button>
+          <button type="button" class="btn btn--ghost key-back" data-action="back" aria-label="Backspace">⌫</button>
+          <button type="button" class="btn btn--add key-enter" data-action="enter">Enter</button>
+        </div>
       </div>
 
       <div class="entry-actions">
@@ -80,10 +98,11 @@
       <div class="stat-grid">
         <div class="stat-card"><span class="stat-card__label">Replications</span><span class="stat-card__val" id="sumCount">0</span></div>
         <div class="stat-card"><span class="stat-card__label">Average</span><span class="stat-card__val" id="sumAvg">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Median</span><span class="stat-card__val" id="sumMedian">–</span></div>
+        <div class="stat-card"><span class="stat-card__label">Mode</span><span class="stat-card__val" id="sumMode">–</span></div>
         <div class="stat-card"><span class="stat-card__label">Minimum</span><span class="stat-card__val" id="sumMin">–</span></div>
         <div class="stat-card"><span class="stat-card__label">Maximum</span><span class="stat-card__val" id="sumMax">–</span></div>
         <div class="stat-card"><span class="stat-card__label">Range</span><span class="stat-card__val" id="sumRange">–</span></div>
-        <div class="stat-card"><span class="stat-card__label">Std dev</span><span class="stat-card__val" id="sumStd">–</span></div>
       </div>
 
       <div class="spec-box">
@@ -151,6 +170,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
