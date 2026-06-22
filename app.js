@@ -28,6 +28,7 @@
     modeQuick: $("modeQuick"), modeManual: $("modeManual"),
     quickPane: $("quickPane"), manualPane: $("manualPane"),
     valueGrid: $("valueGrid"), addLower: $("addLower"), addHigher: $("addHigher"),
+    lowerLess: $("lowerLess"), higherLess: $("higherLess"),
     quickHint: $("quickHint"),
     entryForm: $("entryForm"),
     entryInput: $("entryInput"),
@@ -177,7 +178,7 @@
   }
 
   var GRID_STEP = 0.1;          // value buttons are always 0.1 apart
-  var GRID_MARGIN_STEPS = 5;    // how many buttons to show beyond each limit
+  var GRID_MARGIN_STEPS = 3;    // how many buttons to show beyond each limit
 
   function specDisplay() {
     return (state.lsl !== "" && state.usl !== "") ? state.lsl + "–" + state.usl : "";
@@ -274,6 +275,24 @@
     var dec = decimalsFor(state.step);
     if (dir < 0) state.gridMin = Number((state.gridMin - state.step).toFixed(dec));
     else state.gridMax = Number((state.gridMax + state.step).toFixed(dec));
+    save();
+    renderValueGrid();
+  }
+
+  // Remove the outermost button on one side, but never past the spec limit.
+  function shrinkGrid(dir) {
+    if (state.step == null) return;
+    var dec = decimalsFor(state.step);
+    var lo = Number(state.lsl), hi = Number(state.usl);
+    if (dir < 0) {
+      if (isFinite(lo) && state.gridMin < lo - 1e-9) {
+        state.gridMin = Number((state.gridMin + state.step).toFixed(dec));
+      }
+    } else {
+      if (isFinite(hi) && state.gridMax > hi + 1e-9) {
+        state.gridMax = Number((state.gridMax - state.step).toFixed(dec));
+      }
+    }
     save();
     renderValueGrid();
   }
@@ -710,6 +729,8 @@
     });
     els.addLower.addEventListener("click", function () { extendGrid(-1); });
     els.addHigher.addEventListener("click", function () { extendGrid(1); });
+    els.lowerLess.addEventListener("click", function () { shrinkGrid(-1); });
+    els.higherLess.addEventListener("click", function () { shrinkGrid(1); });
 
     els.recordName.addEventListener("input", function () {
       state.recordName = els.recordName.value;

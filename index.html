@@ -10,7 +10,7 @@
   <title>Record QC</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
 </head>
 <body>
   <div class="app">
@@ -47,11 +47,17 @@
 
       <!-- QUICK-TAP MODE -->
       <div class="entry-pane" id="quickPane">
-        <button type="button" class="extend" id="addLower">＋ add lower value</button>
+        <div class="extend-row">
+          <button type="button" class="extend" id="addLower">＋ add lower</button>
+          <button type="button" class="extend extend--minus" id="lowerLess" aria-label="Remove lowest value">－</button>
+        </div>
         <div class="value-grid" id="valueGrid"></div>
-        <button type="button" class="extend" id="addHigher">＋ add higher value</button>
+        <div class="extend-row">
+          <button type="button" class="extend" id="addHigher">＋ add higher</button>
+          <button type="button" class="extend extend--minus" id="higherLess" aria-label="Remove highest value">－</button>
+        </div>
         <p class="quick-hint" id="quickHint">
-          Type a spec range above (low–high) to get tap buttons.
+          Enter a Lower &amp; Upper limit above to get tap buttons.
         </p>
       </div>
 
@@ -175,6 +181,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
