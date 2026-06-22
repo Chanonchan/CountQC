@@ -1,5 +1,6 @@
-/* CountQC service worker — cache-first for offline use. */
-var CACHE = "countqc-v1";
+/* Record QC service worker — network-first so updates always reach the
+ * device, with a cache fallback for offline use. */
+var CACHE = "recordqc-v3";
 var ASSETS = [
   "./",
   "./index.html",
@@ -29,15 +30,21 @@ self.addEventListener("activate", function (e) {
   );
 });
 
+// Network-first: always try to fetch the latest, fall back to cache offline.
 self.addEventListener("fetch", function (e) {
-  if (e.request.method !== "GET") return;
+  var req = e.request;
+  if (req.method !== "GET") return;
+  if (new URL(req.url).origin !== self.location.origin) return;
+
   e.respondWith(
-    caches.match(e.request).then(function (cached) {
-      return cached || fetch(e.request).then(function (resp) {
-        var copy = resp.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
-        return resp;
-      }).catch(function () { return cached; });
+    fetch(req).then(function (resp) {
+      var copy = resp.clone();
+      caches.open(CACHE).then(function (c) { c.put(req, copy); });
+      return resp;
+    }).catch(function () {
+      return caches.match(req).then(function (cached) {
+        return cached || caches.match("./index.html");
+      });
     })
   );
 });

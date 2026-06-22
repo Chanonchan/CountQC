@@ -499,8 +499,8 @@
       addFromInput();
     });
 
-    els.keypad.addEventListener("click", onKeypad);
-    els.keypadActions.addEventListener("click", onKeypad);
+    if (els.keypad) els.keypad.addEventListener("click", onKeypad);
+    if (els.keypadActions) els.keypadActions.addEventListener("click", onKeypad);
 
     els.valuesList.addEventListener("click", function (e) {
       var btn = e.target.closest("button[data-index]");
