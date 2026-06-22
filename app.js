@@ -8,7 +8,6 @@
   /* ---------- State ---------- */
   var state = {
     recordName: "",     // free-text name shown in the header
-    specName: "",       // spec range text, e.g. "10.0-12.0"
     values: [],   // array of numbers, in entry order
     lsl: "",
     usl: "",
@@ -22,8 +21,8 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var els = {
-    specName: $("specName"),
     recordName: $("recordName"),
+    lowEntry: $("lowEntry"), highEntry: $("highEntry"),
     bigCount: $("bigCount"),
     qsAvg: $("qsAvg"), qsMin: $("qsMin"), qsMax: $("qsMax"),
     modeQuick: $("modeQuick"), modeManual: $("modeManual"),
@@ -66,7 +65,6 @@
       var parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.values)) {
         state.recordName = parsed.recordName || "";
-        state.specName = parsed.specName || "";
         state.values = parsed.values.filter(function (n) { return typeof n === "number" && isFinite(n); });
         state.lsl = parsed.lsl || "";
         state.usl = parsed.usl || "";
@@ -181,22 +179,27 @@
   var GRID_STEP = 0.1;          // value buttons are always 0.1 apart
   var GRID_MARGIN_STEPS = 5;    // how many buttons to show beyond each limit
 
-  // Set the limits + value-button range from a low/high pair.
-  function applyLimits(lo, hi) {
-    if (lo > hi) { var t = lo; lo = hi; hi = t; }
-    state.lsl = fmt(lo);
-    state.usl = fmt(hi);
-    state.step = GRID_STEP;
-    var dec = 1;
-    state.gridMin = snap(lo - GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, dec);
-    state.gridMax = snap(hi + GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, dec);
+  function specDisplay() {
+    return (state.lsl !== "" && state.usl !== "") ? state.lsl + "–" + state.usl : "";
   }
 
-  // Build the value buttons from the spec text (e.g. "10-10.5").
-  function initGridFromSpec() {
-    var r = parseRange(state.specName);
-    if (!r) { state.gridMin = state.gridMax = state.step = null; return; }
-    applyLimits(r.lo, r.hi);
+  // Build the value-button range (0.1 steps) from the current LSL/USL.
+  function rebuildGrid() {
+    var lo = Number(state.lsl), hi = Number(state.usl);
+    if (state.lsl === "" || state.usl === "" || !isFinite(lo) || !isFinite(hi)) {
+      state.gridMin = state.gridMax = state.step = null;
+      return;
+    }
+    if (lo > hi) { var t = lo; lo = hi; hi = t; }
+    state.step = GRID_STEP;
+    state.gridMin = snap(lo - GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, 1);
+    state.gridMax = snap(hi + GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, 1);
+  }
+
+  // Mirror the limit value into all four inputs except the one being edited.
+  function syncLimitInputs(except) {
+    [els.lowEntry, els.lslInput].forEach(function (el) { if (el && el !== except) el.value = state.lsl; });
+    [els.highEntry, els.uslInput].forEach(function (el) { if (el && el !== except) el.value = state.usl; });
   }
 
   function gridValues() {
@@ -278,7 +281,7 @@
   /* ---------- Render: summary page ---------- */
   function renderSummary() {
     var s = stats(state.values);
-    var title = state.recordName.trim() || state.specName.trim();
+    var title = state.recordName.trim() || specDisplay();
     els.summaryTitle.textContent = title ? "Summary — " + title : "Summary";
 
     els.sumCount.textContent = s.n || 0;
@@ -590,7 +593,7 @@
     var s = stats(state.values);
     lines.push("");
     lines.push("name," + (state.recordName.replace(/,/g, " ") || ""));
-    lines.push("specification," + (state.specName.replace(/,/g, " ") || ""));
+    lines.push("specification," + specDisplay());
     lines.push("count," + (s.n || 0));
     lines.push("average," + (s.n ? s.avg : ""));
     lines.push("median," + (s.n ? s.median : ""));
@@ -630,7 +633,7 @@
     }
     var csv = buildCSV();
     var filename =
-      (state.recordName.trim() || state.specName.trim() || "record_qc")
+      (state.recordName.trim() || specDisplay() || "record_qc")
         .replace(/[^a-z0-9]+/gi, "_").toLowerCase() + ".csv";
 
     // Prefer the native share sheet on mobile (lets you "Save to Files",
@@ -674,7 +677,8 @@
     load();
 
     els.recordName.value = state.recordName;
-    els.specName.value = state.specName;
+    els.lowEntry.value = state.lsl;
+    els.highEntry.value = state.usl;
     els.lslInput.value = state.lsl;
     els.uslInput.value = state.usl;
 
@@ -712,41 +716,27 @@
       save();
     });
 
-    // Spec range (quick tab) -> limits + buttons + summary LSL/USL.
-    els.specName.addEventListener("input", function () {
-      state.specName = els.specName.value;
-      var r = parseRange(state.specName);
-      if (r && (fmt(r.lo) !== state.lsl || fmt(r.hi) !== state.usl)) {
-        applyLimits(r.lo, r.hi);
-        els.lslInput.value = state.lsl;
-        els.uslInput.value = state.usl;
-      }
+    // Lower/Upper limits — same data in both the Enter tab and Summary;
+    // editing any one updates the others, the value buttons and the stats.
+    function onLimit(which, inputEl) {
+      if (which === "lsl") state.lsl = inputEl.value.trim();
+      else state.usl = inputEl.value.trim();
+      rebuildGrid();
+      syncLimitInputs(inputEl);
       save();
       renderValueGrid();
-    });
-
-    // Summary LSL/USL -> spec range + buttons (kept in sync both ways).
-    function onLimitInput() {
-      state.lsl = els.lslInput.value.trim();
-      state.usl = els.uslInput.value.trim();
-      var lo = Number(state.lsl), hi = Number(state.usl);
-      if (state.lsl !== "" && state.usl !== "" && isFinite(lo) && isFinite(hi)) {
-        applyLimits(lo, hi);
-        state.specName = state.lsl + "-" + state.usl;
-        els.specName.value = state.specName;
-        renderValueGrid();
-      }
-      save();
       renderSummary();
     }
-    els.lslInput.addEventListener("input", onLimitInput);
-    els.uslInput.addEventListener("input", onLimitInput);
+    els.lowEntry.addEventListener("input", function () { onLimit("lsl", els.lowEntry); });
+    els.highEntry.addEventListener("input", function () { onLimit("usl", els.highEntry); });
+    els.lslInput.addEventListener("input", function () { onLimit("lsl", els.lslInput); });
+    els.uslInput.addEventListener("input", function () { onLimit("usl", els.uslInput); });
 
     els.tabEntry.addEventListener("click", function () { showPage("entry"); });
     els.tabSummary.addEventListener("click", function () { showPage("summary"); });
 
-    // First load: if a spec range exists but the grid wasn't built yet, build it.
-    if (state.step == null && parseRange(state.specName)) initGridFromSpec();
+    // First load: rebuild the value buttons from saved limits.
+    rebuildGrid();
 
     renderAll();
   }

@@ -19,6 +19,8 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden;            /* the app fills the screen; pages scroll inside */
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -29,8 +31,9 @@ html, body {
 .app {
   max-width: 560px;
   margin: 0 auto;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;              /* exactly one screen, so the entry page can't scroll */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -329,6 +332,8 @@ html, body {
 .spec-box { background: var(--card); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); margin-bottom: 14px; }
 .spec-box__title { margin: 0 0 8px; font-size: 15px; }
 .spec-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.spec-inputs--entry { margin-bottom: 0; }
+.spec-inputs--entry .spec-field input { background: var(--card); }
 .spec-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
 .spec-field input {
   padding: 9px 10px;

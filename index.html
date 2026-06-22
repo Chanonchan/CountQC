@@ -10,7 +10,7 @@
   <title>Record QC</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <div class="app">
@@ -22,12 +22,16 @@
 
     <!-- ============ ENTRY PAGE ============ -->
     <section class="page page--entry" id="pageEntry">
-      <input
-        class="meta-input"
-        id="specName"
-        type="text"
-        placeholder="Spec range (low–high), e.g. 10.0-12.0"
-        autocomplete="off" />
+      <div class="spec-inputs spec-inputs--entry">
+        <label class="spec-field">
+          <span>Lower (LSL)</span>
+          <input id="lowEntry" type="text" inputmode="decimal" placeholder="e.g. 8.5" autocomplete="off" />
+        </label>
+        <label class="spec-field">
+          <span>Upper (USL)</span>
+          <input id="highEntry" type="text" inputmode="decimal" placeholder="e.g. 9.0" autocomplete="off" />
+        </label>
+      </div>
 
       <div class="mode-toggle">
         <button type="button" class="mode-btn is-active" id="modeQuick">Quick tap</button>
@@ -171,6 +175,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
