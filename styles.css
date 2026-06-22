@@ -134,7 +134,7 @@ html, body {
 .quickstat__val { display: block; font-size: 20px; font-weight: 700; margin-top: 2px; }
 
 /* ---------- Entry form ---------- */
-.entry-form { display: flex; gap: 8px; margin-bottom: 8px; }
+.entry-form { display: flex; gap: 8px; }
 .entry-input {
   flex: 1;
   padding: 16px;
@@ -160,7 +160,7 @@ html, body {
   font-size: 24px;
   font-weight: 700;
   padding: 0;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card);

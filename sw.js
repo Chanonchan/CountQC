@@ -1,11 +1,12 @@
 /* Record QC service worker — network-first so updates always reach the
- * device, with a cache fallback for offline use. */
-var CACHE = "recordqc-v4";
+ * device, with a cache fallback for offline use. Asset URLs are versioned
+ * (?v=N) so a new build can never be masked by a stale cache. */
+var CACHE = "recordqc-v5";
 var ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
+  "./styles.css?v=5",
+  "./app.js?v=5",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -30,14 +31,18 @@ self.addEventListener("activate", function (e) {
   );
 });
 
-// Network-first: always try to fetch the latest, fall back to cache offline.
+// Network-first. For page navigations, bypass the HTTP cache entirely so the
+// newest index.html (and therefore the newest ?v= assets) always loads online.
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
+  var isNav = req.mode === "navigate";
+  var fetchOpts = isNav ? { cache: "no-store" } : undefined;
+
   e.respondWith(
-    fetch(req).then(function (resp) {
+    fetch(req, fetchOpts).then(function (resp) {
       var copy = resp.clone();
       caches.open(CACHE).then(function (c) { c.put(req, copy); });
       return resp;
