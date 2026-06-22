@@ -1,20 +1,24 @@
-# CountQC
+# Record QC
 
 A small, installable **mobile web app (PWA)** for recording quality-control
-measurements. Enter replication values one at a time like a calculator — or
-paste many at once — then jump to the summary to see the statistics and the
+measurements. Enter replication values with the built-in **calculator keypad**
+— one at a time, or queue several / paste many at once — then jump to the
+summary to see the statistics, a distribution bar graph, and the
 **over / under specification** percentages against your limits.
+
+> The GitHub repository is named `CountQC`; the app itself is **Record QC**.
 
 No app store, no build step, no server. It runs in the phone browser, works
 offline, and can be added to the home screen so it behaves like a native app.
 
 ## Features
 
-- **Fast entry** – type a number, press **Enter**, keep going. The running
-  count, average, min and max update live.
-- **Bulk entry** – paste or type many numbers at once separated by spaces,
-  commas, semicolons or new lines (e.g. `12.1 12.3 11.9`) and add them all in
-  one go. Handles 1–50 replications or many more.
+- **Calculator keypad** – tap digits, `.`, and `±` like a calculator, then
+  **Enter** to record. The running count, average, min and max update live.
+- **Queue / bulk entry** – use **Next #** to line up several numbers before
+  pressing Enter, or paste many at once separated by spaces, commas,
+  semicolons or new lines (e.g. `12.1 12.3 11.9`). Handles 1–50 replications
+  or many more.
 - **Per-record name** – label what you're measuring (the "specification").
 - **Summary page** with:
   - Replication count, **average**, **minimum**, **maximum**, range, std dev

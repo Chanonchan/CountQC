@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0f766e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CountQC" />
-  <title>CountQC</title>
+  <meta name="apple-mobile-web-app-title" content="Record QC" />
+  <title>Record QC</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,7 +15,7 @@
 <body>
   <div class="app">
     <header class="topbar">
-      <h1 class="brand">Count<span>QC</span></h1>
+      <h1 class="brand">Record <span>QC</span></h1>
       <div class="rep-name" id="repName">New record</div>
     </header>
 
@@ -46,16 +46,37 @@
           class="entry-input"
           id="entryInput"
           type="text"
-          inputmode="decimal"
+          inputmode="none"
           enterkeyhint="enter"
-          placeholder="Type a number, press Enter"
+          placeholder="Tap numbers below"
           autocomplete="off" />
-        <button class="btn btn--add" type="submit" aria-label="Add value">Enter</button>
       </form>
 
+      <div class="keypad" id="keypad">
+        <button type="button" class="key" data-key="7">7</button>
+        <button type="button" class="key" data-key="8">8</button>
+        <button type="button" class="key" data-key="9">9</button>
+        <button type="button" class="key" data-key="4">4</button>
+        <button type="button" class="key" data-key="5">5</button>
+        <button type="button" class="key" data-key="6">6</button>
+        <button type="button" class="key" data-key="1">1</button>
+        <button type="button" class="key" data-key="2">2</button>
+        <button type="button" class="key" data-key="3">3</button>
+        <button type="button" class="key key--fn" data-action="sign" aria-label="Toggle negative">±</button>
+        <button type="button" class="key" data-key="0">0</button>
+        <button type="button" class="key" data-key="." aria-label="Decimal point">.</button>
+      </div>
+
+      <div class="keypad-actions" id="keypadActions">
+        <button type="button" class="btn btn--ghost key-space" data-action="space">Next #</button>
+        <button type="button" class="btn btn--ghost key-back" data-action="back" aria-label="Backspace">⌫</button>
+        <button type="button" class="btn btn--add key-enter" data-action="enter">Enter</button>
+      </div>
+
       <p class="hint">
-        Tip: paste or type many at once separated by space, comma or new line —
-        e.g. <code>12.1 12.3 11.9</code> — then press Enter to add them all.
+        Tap digits like a calculator, then <strong>Enter</strong> to record. Use
+        <strong>Next #</strong> to queue several numbers before pressing Enter — or
+        paste many at once (e.g. <code>12.1 12.3 11.9</code>).
       </p>
 
       <ul class="values" id="valuesList"></ul>

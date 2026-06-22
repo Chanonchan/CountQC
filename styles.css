@@ -110,6 +110,34 @@ html, body {
 }
 .entry-input:focus { outline: none; border-color: var(--teal-light); }
 
+/* ---------- Calculator keypad ---------- */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.key {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 18px 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.05s ease, background 0.12s ease;
+}
+.key:active { transform: scale(0.95); background: #e2e8f0; }
+.key--fn { color: var(--muted); }
+
+.keypad-actions { display: flex; gap: 8px; margin-bottom: 14px; }
+.key-space { flex: 1.2; font-size: 15px; }
+.key-back { flex: 1; font-size: 20px; }
+.key-enter { flex: 2; }
+
 /* ---------- Buttons ---------- */
 .btn {
   border: none;
@@ -322,6 +350,7 @@ html, body {
     --line: #25324a;
   }
   .spec-field input, .spec-result, .hist-track { background: #0f1828; }
+  .key:active { background: #25324a; }
   .values li button { background: #25324a; }
   .hint code { background: #25324a; }
 }

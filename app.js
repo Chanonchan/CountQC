@@ -23,6 +23,8 @@
     qsAvg: $("qsAvg"), qsMin: $("qsMin"), qsMax: $("qsMax"),
     entryForm: $("entryForm"),
     entryInput: $("entryInput"),
+    keypad: $("keypad"),
+    keypadActions: $("keypadActions"),
     valuesList: $("valuesList"),
     undoBtn: $("undoBtn"),
     clearBtn: $("clearBtn"),
@@ -362,6 +364,59 @@
     els.entryInput.focus();
   }
 
+  /* ---------- Calculator keypad ---------- */
+  // Returns the start index of the number currently being typed
+  // (everything after the last space/comma/semicolon separator).
+  function lastTokenStart(v) {
+    var idx = -1, i;
+    var seps = [" ", ",", ";", "\n", "\t"];
+    for (i = 0; i < seps.length; i++) {
+      var p = v.lastIndexOf(seps[i]);
+      if (p > idx) idx = p;
+    }
+    return idx + 1;
+  }
+
+  function keypadPress(key, action) {
+    var input = els.entryInput;
+    var v = input.value;
+
+    if (action === "enter") { addFromInput(); return; }
+    if (action === "back") { input.value = v.slice(0, -1); return; }
+    if (action === "space") {
+      // Queue another number: add a separator if the current token isn't empty.
+      if (v !== "" && v.slice(-1) !== " ") input.value = v + " ";
+      input.focus();
+      return;
+    }
+    if (action === "sign") {
+      var start = lastTokenStart(v);
+      var head = v.slice(0, start);
+      var tok = v.slice(start);
+      tok = tok.charAt(0) === "-" ? tok.slice(1) : "-" + tok;
+      input.value = head + tok;
+      input.focus();
+      return;
+    }
+    if (key === ".") {
+      var s = lastTokenStart(v);
+      if (v.slice(s).indexOf(".") !== -1) return; // one decimal per number
+      input.value = v + ".";
+      input.focus();
+      return;
+    }
+    // digit
+    input.value = v + key;
+    input.focus();
+  }
+
+  function onKeypad(e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.action) keypadPress(null, btn.dataset.action);
+    else if (btn.dataset.key != null) keypadPress(btn.dataset.key, null);
+  }
+
   function removeAt(index) {
     if (index >= 0 && index < state.values.length) {
       state.values.splice(index, 1);
@@ -443,6 +498,9 @@
       e.preventDefault();
       addFromInput();
     });
+
+    els.keypad.addEventListener("click", onKeypad);
+    els.keypadActions.addEventListener("click", onKeypad);
 
     els.valuesList.addEventListener("click", function (e) {
       var btn = e.target.closest("button[data-index]");

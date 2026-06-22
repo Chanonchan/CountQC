@@ -1,6 +1,6 @@
 {
-  "name": "CountQC — QC Counter & Stats",
-  "short_name": "CountQC",
+  "name": "Record QC — QC Counter & Stats",
+  "short_name": "Record QC",
   "description": "Enter replication measurements one at a time or in bulk, then see average, min, max and over/under specification percentages.",
   "start_url": "./index.html",
   "scope": "./",
