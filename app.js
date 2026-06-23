@@ -660,7 +660,6 @@
     var s = stats(state.values);
     lines.push("");
     lines.push("name," + (state.recordName.replace(/,/g, " ") || ""));
-    lines.push("specification," + specDisplay());
     lines.push("count," + (s.n || 0));
     lines.push("average," + (s.n ? s.avg : ""));
     lines.push("median," + (s.n ? s.median : ""));
