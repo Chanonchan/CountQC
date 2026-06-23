@@ -174,12 +174,11 @@ html, body {
   max-height: calc(100dvh - 360px);   /* never push the controls off-screen */
   display: grid;
   grid-auto-flow: column;              /* numbers fill down, then next column */
-  grid-auto-columns: 56px;
-  justify-content: start;
+  grid-auto-columns: minmax(0, 1fr);   /* columns share the width; never overflow */
   align-content: start;
   gap: 8px;
   padding: 2px;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 .vbtn {
   display: flex;

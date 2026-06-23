@@ -245,17 +245,36 @@
       els.valueGrid.appendChild(b);
     }
 
-    // Even column-major layout: pick a row count so the columns fill the
-    // width and line up (no ragged/balanced columns).
-    if (hasGrid) {
-      var gw = els.valueGrid.clientWidth || ((window.innerWidth || 360) - 28);
-      var cell = 56 + 8; // button width + gap
-      var cols = Math.max(1, Math.floor((gw + 8) / cell));
-      var rows = Math.ceil(vals.length / cols);
-      els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", 44px)";
-    } else {
-      els.valueGrid.style.gridTemplateRows = "";
-    }
+    layoutValueGrid(vals.length);
+  }
+
+  // Fill numbers down each column, adding columns across the width so they all
+  // stay on screen. Rows are limited by the available height (no clipping);
+  // columns auto-share the width (buttons shrink a little when there are many).
+  function layoutValueGrid(n) {
+    if (!n) { els.valueGrid.style.gridTemplateRows = ""; els.valueGrid.style.overflowY = "hidden"; return; }
+    var gap = 8, rowH = 44, minBtnW = 42, maxBtnW = 70;
+    var gw = els.valueGrid.clientWidth || ((window.innerWidth || 360) - 28);
+
+    var rect = els.valueGrid.getBoundingClientRect ? els.valueGrid.getBoundingClientRect() : null;
+    var vh = window.innerHeight || 700;
+    // Space from the top of the grid down to the +add/Undo/Clear rows + tab bar.
+    var availH = (rect && rect.top > 0) ? (vh - rect.top - 170) : (vh - 360);
+    if (availH < 100) availH = 100;
+
+    var maxRows = Math.max(1, Math.floor((availH + gap) / (rowH + gap)));
+    var colsMax = Math.max(1, Math.floor((gw + gap) / (minBtnW + gap)));
+    var colsMin = Math.max(1, Math.ceil((gw + gap) / (maxBtnW + gap)));
+
+    var cols = Math.ceil(n / maxRows);
+    if (cols < colsMin) cols = colsMin;
+    if (cols > colsMax) cols = colsMax;
+    var rows = Math.ceil(n / cols);
+
+    els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", " + rowH + "px)";
+    // If even the widest packing can't fit the height, allow a gentle scroll
+    // so every button is still reachable.
+    els.valueGrid.style.overflowY = rows > maxRows ? "auto" : "hidden";
   }
 
   function renderModePanes() {
