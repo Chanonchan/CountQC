@@ -355,7 +355,7 @@ html, body {
 .spec-box { background: var(--card); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); margin-bottom: 14px; }
 .spec-box__title { margin: 0 0 8px; font-size: 15px; }
 .spec-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.spec-inputs--entry { margin-bottom: 0; }
+.spec-inputs--entry { margin-bottom: 0; grid-template-columns: 1fr 1fr 0.85fr; }
 .spec-inputs--entry .spec-field input { background: var(--card); }
 .spec-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); min-width: 0; }
 .spec-field input {

@@ -14,7 +14,7 @@
     mode: "quick",      // "quick" (value buttons) or "manual" (keypad)
     gridMin: null,      // lowest value button
     gridMax: null,      // highest value button
-    step: null          // spacing between value buttons
+    step: 0.1           // user-chosen spacing between value buttons
   };
 
   /* ---------- Element refs ---------- */
@@ -22,7 +22,7 @@
 
   var els = {
     recordName: $("recordName"),
-    lowEntry: $("lowEntry"), highEntry: $("highEntry"),
+    lowEntry: $("lowEntry"), highEntry: $("highEntry"), stepInput: $("stepInput"),
     bigCount: $("bigCount"),
     qsAvg: $("qsAvg"), qsMin: $("qsMin"), qsMax: $("qsMax"),
     modeQuick: $("modeQuick"), modeManual: $("modeManual"),
@@ -72,7 +72,7 @@
         state.mode = parsed.mode === "manual" ? "manual" : "quick";
         state.gridMin = typeof parsed.gridMin === "number" ? parsed.gridMin : null;
         state.gridMax = typeof parsed.gridMax === "number" ? parsed.gridMax : null;
-        state.step = typeof parsed.step === "number" ? parsed.step : null;
+        state.step = typeof parsed.step === "number" && parsed.step > 0 ? parsed.step : 0.1;
       }
     } catch (e) { /* ignore */ }
   }
@@ -184,17 +184,31 @@
     return (state.lsl !== "" && state.usl !== "") ? state.lsl + "–" + state.usl : "";
   }
 
-  // Build the value-button range (0.1 steps) from the current LSL/USL.
+  // The user-chosen interval between value buttons (defaults to 0.1).
+  function userStep() {
+    var s = Number(state.step);
+    return isFinite(s) && s > 0 ? s : 0.1;
+  }
+
+  // Count the decimal places of a number (handles steps like 0.25).
+  function decimalsOf(n) {
+    var s = String(n);
+    var i = s.indexOf(".");
+    return i < 0 ? 0 : Math.min(s.length - i - 1, 6);
+  }
+
+  // Build the value-button range from the current LSL/USL and step.
   function rebuildGrid() {
+    var step = userStep();
     var lo = Number(state.lsl), hi = Number(state.usl);
     if (state.lsl === "" || state.usl === "" || !isFinite(lo) || !isFinite(hi)) {
-      state.gridMin = state.gridMax = state.step = null;
+      state.gridMin = state.gridMax = null;
       return;
     }
     if (lo > hi) { var t = lo; lo = hi; hi = t; }
-    state.step = GRID_STEP;
-    state.gridMin = snap(lo - GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, 1);
-    state.gridMax = snap(hi + GRID_MARGIN_STEPS * GRID_STEP, GRID_STEP, 1);
+    var dec = decimalsOf(step);
+    state.gridMin = snap(lo - GRID_MARGIN_STEPS * step, step, dec);
+    state.gridMax = snap(hi + GRID_MARGIN_STEPS * step, step, dec);
   }
 
   // Mirror the limit value into all four inputs except the one being edited.
@@ -204,14 +218,15 @@
   }
 
   function gridValues() {
-    if (state.step == null || state.gridMin == null || state.gridMax == null) return [];
-    var dec = decimalsFor(state.step);
-    var n = Math.round((state.gridMax - state.gridMin) / state.step);
+    if (state.gridMin == null || state.gridMax == null) return [];
+    var step = userStep();
+    var dec = decimalsOf(step);
+    var n = Math.round((state.gridMax - state.gridMin) / step);
     if (n < 0) n = 0;
     if (n > 400) n = 400; // safety cap
     var out = [];
     for (var i = 0; i <= n; i++) {
-      out.push(Number((state.gridMin + i * state.step).toFixed(dec)));
+      out.push(Number((state.gridMin + i * step).toFixed(dec)));
     }
     return out;
   }
@@ -228,7 +243,7 @@
   function renderValueGrid() {
     var vals = gridValues();
     var hasGrid = vals.length > 0;
-    var dec = state.step != null ? decimalsFor(state.step) : 0;
+    var dec = decimalsOf(userStep());
     els.valueGrid.innerHTML = "";
     els.quickHint.style.display = hasGrid ? "none" : "";
     els.addLower.style.display = hasGrid ? "" : "none";
@@ -304,26 +319,26 @@
   }
 
   function extendGrid(dir) {
-    if (state.step == null) return;
-    var dec = decimalsFor(state.step);
-    if (dir < 0) state.gridMin = Number((state.gridMin - state.step).toFixed(dec));
-    else state.gridMax = Number((state.gridMax + state.step).toFixed(dec));
+    if (state.gridMin == null) return;
+    var step = userStep(), dec = decimalsOf(step);
+    if (dir < 0) state.gridMin = Number((state.gridMin - step).toFixed(dec));
+    else state.gridMax = Number((state.gridMax + step).toFixed(dec));
     save();
     renderValueGrid();
   }
 
   // Remove the outermost button on one side, but never past the spec limit.
   function shrinkGrid(dir) {
-    if (state.step == null) return;
-    var dec = decimalsFor(state.step);
+    if (state.gridMin == null) return;
+    var step = userStep(), dec = decimalsOf(step);
     var lo = Number(state.lsl), hi = Number(state.usl);
     if (dir < 0) {
       if (isFinite(lo) && state.gridMin < lo - 1e-9) {
-        state.gridMin = Number((state.gridMin + state.step).toFixed(dec));
+        state.gridMin = Number((state.gridMin + step).toFixed(dec));
       }
     } else {
       if (isFinite(hi) && state.gridMax > hi + 1e-9) {
-        state.gridMax = Number((state.gridMax - state.step).toFixed(dec));
+        state.gridMax = Number((state.gridMax - step).toFixed(dec));
       }
     }
     save();
@@ -731,6 +746,7 @@
     els.recordName.value = state.recordName;
     els.lowEntry.value = state.lsl;
     els.highEntry.value = state.usl;
+    els.stepInput.value = state.step;
     els.lslInput.value = state.lsl;
     els.uslInput.value = state.usl;
 
@@ -768,6 +784,15 @@
     els.recordName.addEventListener("input", function () {
       state.recordName = els.recordName.value;
       save();
+    });
+
+    // Interval between value buttons.
+    els.stepInput.addEventListener("input", function () {
+      var s = Number(els.stepInput.value.trim());
+      state.step = isFinite(s) && s > 0 ? s : 0.1;
+      rebuildGrid();
+      save();
+      renderValueGrid();
     });
 
     // Lower/Upper limits — same data in both the Enter tab and Summary;

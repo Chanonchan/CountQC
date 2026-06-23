@@ -10,7 +10,7 @@
   <title>Record QC</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
 </head>
 <body>
   <div class="app">
@@ -30,6 +30,10 @@
         <label class="spec-field">
           <span>Upper (USL)</span>
           <input id="highEntry" type="text" inputmode="decimal" placeholder="e.g. 9.0" autocomplete="off" />
+        </label>
+        <label class="spec-field">
+          <span>Step</span>
+          <input id="stepInput" type="text" inputmode="decimal" placeholder="0.1" autocomplete="off" />
         </label>
       </div>
 
@@ -181,6 +185,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
