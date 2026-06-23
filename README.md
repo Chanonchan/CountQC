@@ -1,12 +1,10 @@
-# Record QC
+# Spec Record
 
 A small, installable **mobile web app (PWA)** for recording quality-control
-measurements. Enter replication values with the built-in **calculator keypad**
-— one at a time, or queue several / paste many at once — then jump to the
-summary to see the statistics, a distribution bar graph, and the
-**over / under specification** percentages against your limits.
-
-> The GitHub repository is named `CountQC`; the app itself is **Record QC**.
+measurements. Set a spec range and tap value buttons, or use the built-in
+**calculator keypad** — then jump to the summary to see the statistics, a
+distribution bar graph, and the **over / under specification** percentages
+against your limits.
 
 No app store, no build step, no server. It runs in the phone browser, works
 offline, and can be added to the home screen so it behaves like a native app.

@@ -1,6 +1,6 @@
 {
-  "name": "Record QC — QC Counter & Stats",
-  "short_name": "Record QC",
+  "name": "Spec Record — QC Counter & Stats",
+  "short_name": "Spec Record",
   "description": "Enter replication measurements one at a time or in bulk, then see average, min, max and over/under specification percentages.",
   "start_url": "./index.html",
   "scope": "./",
