@@ -233,6 +233,8 @@
     els.quickHint.style.display = hasGrid ? "none" : "";
     els.addLower.style.display = hasGrid ? "" : "none";
     els.addHigher.style.display = hasGrid ? "" : "none";
+    els.lowerLess.style.display = hasGrid ? "" : "none";
+    els.higherLess.style.display = hasGrid ? "" : "none";
 
     for (var i = 0; i < vals.length; i++) {
       var b = document.createElement("button");
@@ -241,6 +243,18 @@
       b.textContent = vals[i].toFixed(dec); // consistent decimals, e.g. 8.0
       b.dataset.val = String(vals[i]);
       els.valueGrid.appendChild(b);
+    }
+
+    // Even column-major layout: pick a row count so the columns fill the
+    // width and line up (no ragged/balanced columns).
+    if (hasGrid) {
+      var gw = els.valueGrid.clientWidth || ((window.innerWidth || 360) - 28);
+      var cell = 56 + 8; // button width + gap
+      var cols = Math.max(1, Math.floor((gw + 8) / cell));
+      var rows = Math.ceil(vals.length / cols);
+      els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", 44px)";
+    } else {
+      els.valueGrid.style.gridTemplateRows = "";
     }
   }
 
@@ -755,6 +769,10 @@
 
     els.tabEntry.addEventListener("click", function () { showPage("entry"); });
     els.tabSummary.addEventListener("click", function () { showPage("summary"); });
+
+    window.addEventListener("resize", function () {
+      if (state.mode !== "manual") renderValueGrid();
+    });
 
     // First load: rebuild the value buttons from saved limits.
     rebuildGrid();
