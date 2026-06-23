@@ -70,6 +70,7 @@ html, body {
   flex: 1;
   padding: 16px 16px calc(env(safe-area-inset-bottom) + 90px);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .hidden { display: none !important; }
 
@@ -345,8 +346,10 @@ html, body {
 .spec-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .spec-inputs--entry { margin-bottom: 0; }
 .spec-inputs--entry .spec-field input { background: var(--card); }
-.spec-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+.spec-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); min-width: 0; }
 .spec-field input {
+  width: 100%;
+  min-width: 0;
   padding: 9px 10px;
   font-size: 16px;
   border: 2px solid var(--line);
