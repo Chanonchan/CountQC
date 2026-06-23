@@ -1,4 +1,4 @@
-# Spec Record
+# Specification Recorder
 
 A small, installable **mobile web app (PWA)** for recording quality-control
 measurements. Set a spec range and tap value buttons, or use the built-in
