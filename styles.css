@@ -24,11 +24,14 @@ button { touch-action: manipulation; }
   user-select: none;
 }
 
-html, body {
+html { height: 100%; overscroll-behavior: none; }
+body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  position: fixed;             /* lock to the viewport: no document rubber-band */
+  inset: 0;
   overflow: hidden;            /* the app fills the screen; pages scroll inside */
+  overscroll-behavior: none;
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -80,7 +83,8 @@ html, body {
   padding: 16px 16px calc(env(safe-area-inset-bottom) + 90px);
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 .hidden { display: none !important; }
 
