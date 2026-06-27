@@ -402,23 +402,21 @@
     var hasSpec = lsl !== null || usl !== null;
     els.histLegend.style.display = hasSpec ? "flex" : "none";
 
-    // Choose bin width: aim for ~sqrt(n) bins, clamped 5..12.
-    var target = Math.min(12, Math.max(5, Math.ceil(Math.sqrt(s.n))));
-    var width = niceWidth(s.range, target);
-    var dec = decimalsFor(width);
+    // One bin per Step increment so every value shows (no auto-binning jumps).
+    var width = userStep();
+    var dec = decimalsOf(width);
 
-    // Align bins to a "nice" lower bound and build them (incl. empty bins).
-    var start = Math.floor(s.min / width) * width;
+    var start = Number((Math.floor((s.min + 1e-9) / width) * width).toFixed(dec));
     var count = Math.floor((s.max - start) / width + 1e-9) + 1;
     if (count < 1) count = 1;
-    if (count > 60) count = 60; // safety cap
+    if (count > 250) count = 250; // safety cap
     var bins = [];
     for (var i = 0; i < count; i++) {
-      var lo = start + i * width;
-      bins.push({ lo: lo, hi: lo + width, mid: lo + width / 2, count: 0 });
+      var lo = Number((start + i * width).toFixed(dec));
+      bins.push({ lo: lo, count: 0 });
     }
     for (var k = 0; k < state.values.length; k++) {
-      var idx = Math.floor((state.values[k] - start) / width + 1e-9);
+      var idx = Math.round((state.values[k] - start) / width);
       if (idx < 0) idx = 0;
       if (idx >= count) idx = count - 1;
       bins[idx].count++;
@@ -427,9 +425,11 @@
     var maxCount = 0;
     bins.forEach(function (b) { if (b.count > maxCount) maxCount = b.count; });
 
-    function classify(mid) {
-      if (lsl !== null && mid < lsl) return "under";
-      if (usl !== null && mid > usl) return "over";
+    // Classify a bin by the value it represents (its lower edge), so the
+    // colours line up exactly with the under/in/over spec counts.
+    function classify(v) {
+      if (lsl !== null && v < lsl) return "under";
+      if (usl !== null && v > usl) return "over";
       return "in";
     }
 
@@ -444,7 +444,7 @@
 
     var prevClass = null;
     bins.forEach(function (b) {
-      var cls = hasSpec ? classify(b.mid) : "in";
+      var cls = hasSpec ? classify(b.lo) : "in";
       // Separator lines between under / in / over regions.
       if (hasSpec && prevClass !== null) {
         if (prevClass === "under" && cls !== "under" && lsl !== null) {
