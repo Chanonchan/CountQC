@@ -10,7 +10,7 @@
   <title>Specification Recorder</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="styles.css?v=22" />
 </head>
 <body>
   <div class="app">
@@ -133,24 +133,15 @@
           </label>
         </div>
 
-        <div class="spec-results" id="specResults">
-          <div class="spec-result spec-result--under">
-            <span class="spec-result__pct" id="pctUnder">–</span>
-            <span class="spec-result__label">Under spec<br><small id="underCount"></small></span>
+        <div class="spec-donut">
+          <div class="ring" id="specRing">
+            <div class="ring__txt"><b id="pctIn">–</b><small>in spec</small></div>
           </div>
-          <div class="spec-result spec-result--in">
-            <span class="spec-result__pct" id="pctIn">–</span>
-            <span class="spec-result__label">In spec<br><small id="inCount"></small></span>
+          <div class="legend">
+            <div class="lg lg--under"><span class="l"><i class="dot dot--under"></i>Under</span><b id="pctUnder">–</b></div>
+            <div class="lg lg--in"><span class="l"><i class="dot dot--in"></i>In spec</span><b id="pctInLeg">–</b></div>
+            <div class="lg lg--over"><span class="l"><i class="dot dot--over"></i>Over</span><b id="pctOver">–</b></div>
           </div>
-          <div class="spec-result spec-result--over">
-            <span class="spec-result__pct" id="pctOver">–</span>
-            <span class="spec-result__label">Over spec<br><small id="overCount"></small></span>
-          </div>
-        </div>
-        <div class="spec-bar" id="specBar" aria-hidden="true">
-          <div class="spec-bar__seg spec-bar__seg--under" id="barUnder"></div>
-          <div class="spec-bar__seg spec-bar__seg--in" id="barIn"></div>
-          <div class="spec-bar__seg spec-bar__seg--over" id="barOver"></div>
         </div>
       </div>
 
@@ -185,6 +176,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>

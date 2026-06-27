@@ -43,9 +43,8 @@
     sumMax: $("sumMax"), sumRange: $("sumRange"),
     sumMedian: $("sumMedian"), sumMode: $("sumMode"),
     lslInput: $("lslInput"), uslInput: $("uslInput"),
-    pctUnder: $("pctUnder"), pctIn: $("pctIn"), pctOver: $("pctOver"),
-    underCount: $("underCount"), inCount: $("inCount"), overCount: $("overCount"),
-    barUnder: $("barUnder"), barIn: $("barIn"), barOver: $("barOver"),
+    pctUnder: $("pctUnder"), pctIn: $("pctIn"), pctInLeg: $("pctInLeg"), pctOver: $("pctOver"),
+    specRing: $("specRing"),
     histogram: $("histogram"),
     histLegend: $("histLegend"),
     allValuesList: $("allValuesList"),
@@ -503,17 +502,18 @@
 
     els.pctUnder.textContent = pct(under);
     els.pctIn.textContent = pct(inSpec);
+    els.pctInLeg.textContent = pct(inSpec);
     els.pctOver.textContent = pct(over);
-    els.underCount.textContent = haveSpec ? under + " of " + n : "";
-    els.inCount.textContent = haveSpec ? inSpec + " of " + n : "";
-    els.overCount.textContent = haveSpec ? over + " of " + n : "";
 
+    // Donut gauge: under | in | over slices around the ring.
     if (haveSpec) {
-      els.barUnder.style.width = (under / n * 100) + "%";
-      els.barIn.style.width = (inSpec / n * 100) + "%";
-      els.barOver.style.width = (over / n * 100) + "%";
+      var pu = under / n * 100, pi = inSpec / n * 100;
+      var a = pu, b = pu + pi;
+      els.specRing.style.background =
+        "conic-gradient(var(--under) 0 " + a + "%, var(--in) " + a + "% " + b +
+        "%, var(--over) " + b + "% 100%)";
     } else {
-      els.barUnder.style.width = els.barIn.style.width = els.barOver.style.width = "0%";
+      els.specRing.style.background = "conic-gradient(var(--line) 0 100%)";
     }
   }
 
