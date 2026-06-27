@@ -16,6 +16,14 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* Fast repeated taps shouldn't trigger double-tap zoom/scroll on mobile. */
+button { touch-action: manipulation; }
+.vbtn, .key, .tab, .mode-btn, .extend, .btn {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -72,6 +80,7 @@ html, body {
   padding: 16px 16px calc(env(safe-area-inset-bottom) + 90px);
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 .hidden { display: none !important; }
 
@@ -182,6 +191,7 @@ html, body {
   gap: 8px;
   padding: 2px;
   overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 .vbtn {
   display: flex;
