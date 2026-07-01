@@ -151,8 +151,11 @@ body {
 }
 .mode-btn.is-active { background: var(--card); color: var(--teal-light); box-shadow: var(--shadow); }
 
-/* Entry panes size to their content; spare space falls to the bottom
-   (above the tab bar) instead of stretching the working area. */
+/* Both entry panes claim the same workspace height as the manual keypad
+   (entry-form 47 + gap 7 + keypad 248 + gap 7 + action row 50 = 359px), so
+   Undo/Clear land in the same place in both modes. Manual reaches this size
+   naturally from its fixed rows; Quick tap is pinned to match (and may shrink
+   on very short screens — see the in-app-browser fix at the bottom). */
 .entry-pane {
   flex: 0 1 auto;
   min-height: 0;
@@ -160,6 +163,7 @@ body {
   flex-direction: column;
   gap: 7px;
 }
+#quickPane { flex: 0 1 359px; }
 
 /* Quick-tap value grid */
 .extend-row { display: flex; gap: 7px; flex: 0 0 auto; }
@@ -185,9 +189,8 @@ body {
 /* Values run DOWN each column; when a column reaches the bottom of the
    visible area a new column starts to the right — all on one screen. */
 .value-grid {
-  flex: 0 1 auto;
+  flex: 1 1 0;                         /* fill the rest of the fixed-height pane */
   min-height: 0;
-  max-height: calc(100dvh - 360px);   /* never push the controls off-screen */
   display: grid;
   grid-auto-flow: column;              /* numbers fill down, then next column */
   grid-auto-columns: minmax(0, 1fr);   /* columns share the width; never overflow */
@@ -202,10 +205,10 @@ body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 44px;
+  height: var(--vbtn-h, 44px);         /* set per-render so buttons fill the workspace */
   line-height: 1;
   padding: 0;
-  font-size: 17px;
+  font-size: var(--vbtn-font, 17px);
   font-weight: 700;
   border: 1.5px solid var(--line);
   border-radius: 10px;
@@ -523,3 +526,19 @@ body {
 .tab__icon { font-size: 22px; line-height: 1; }
 .tab__text { font-size: 12px; font-weight: 600; }
 .tab.is-active { color: var(--teal-light); }
+
+/* ---------- Short-viewport / in-app-browser fit (Safari, LINE) ---------- */
+/* The app height tracks the *visible* area (set from JS via --app-h). In a
+   standalone/installed PWA there is no browser chrome, so this equals 100dvh
+   and nothing changes. In Safari or an in-app browser, whose toolbars shrink
+   the visible area, this keeps the Enter row, Undo/Clear and tab bar on
+   screen instead of hidden behind the chrome. Shrink-only: full-size when
+   there's room, compressing (with floors) only when the screen is too short. */
+.app { height: var(--app-h, 100dvh); }
+/* The keypad must be allowed to shrink as a flex item (base CSS sets
+   flex:0 0 auto) before its rows can compress below 56px; floor 34px/row. */
+.keypad { flex: 0 1 auto; grid-auto-rows: minmax(34px, 56px); min-height: 0; }
+.page--entry .keypad-actions .btn { height: clamp(38px, 7vh, 50px); }
+/* Last-resort safety net: only engages if even the compressed workspace
+   won't fit, so no control is ever unreachable. */
+.page--entry { overflow-y: auto; }

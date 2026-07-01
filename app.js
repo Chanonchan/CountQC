@@ -263,32 +263,39 @@
   }
 
   // Fill numbers down each column, adding columns across the width so they all
-  // stay on screen. Rows are limited by the available height (no clipping);
-  // columns auto-share the width (buttons shrink a little when there are many).
+  // stay on screen. The grid always fills the same fixed workspace (matching
+  // the manual keypad), so buttons grow when there are few values and shrink
+  // (with a floor) when there are many, rather than leaving dead space.
   function layoutValueGrid(n) {
     if (!n) { els.valueGrid.style.gridTemplateRows = ""; els.valueGrid.style.overflowY = "hidden"; return; }
-    var gap = 8, rowH = 44, minBtnW = 42, maxBtnW = 70;
+    var gap = 8, minBtnW = 46, maxBtnW = 96, rowMin = 40, rowMax = 76;
     var gw = els.valueGrid.clientWidth || ((window.innerWidth || 360) - 28);
+    var gh = els.valueGrid.clientHeight || 240;
 
-    var rect = els.valueGrid.getBoundingClientRect ? els.valueGrid.getBoundingClientRect() : null;
-    var vh = window.innerHeight || 700;
-    // Space from the top of the grid down to the +add/Undo/Clear rows + tab bar.
-    var availH = (rect && rect.top > 0) ? (vh - rect.top - 170) : (vh - 360);
-    if (availH < 100) availH = 100;
+    var colsMinW = Math.max(1, Math.ceil((gw + gap) / (maxBtnW + gap)));  // fewest cols before buttons get too wide
+    var colsMaxW = Math.max(1, Math.floor((gw + gap) / (minBtnW + gap))); // most cols before buttons get too narrow
 
-    var maxRows = Math.max(1, Math.floor((availH + gap) / (rowH + gap)));
-    var colsMax = Math.max(1, Math.floor((gw + gap) / (minBtnW + gap)));
-    var colsMin = Math.max(1, Math.ceil((gw + gap) / (maxBtnW + gap)));
+    // Aim for a roughly square packing of the workspace, then respect width limits.
+    var cols = Math.round(Math.sqrt((n * gw) / gh)) || 1;
+    cols = Math.max(colsMinW, Math.min(colsMaxW, cols, n));
 
-    var cols = Math.ceil(n / maxRows);
-    if (cols < colsMin) cols = colsMin;
-    if (cols > colsMax) cols = colsMax;
     var rows = Math.ceil(n / cols);
+    var rowH = Math.floor((gh - (rows - 1) * gap) / rows);
+    // Too short for this many rows: add columns (fewer rows) until it fits.
+    while (rowH < rowMin && cols < colsMaxW) {
+      cols++;
+      rows = Math.ceil(n / cols);
+      rowH = Math.floor((gh - (rows - 1) * gap) / rows);
+    }
+    rowH = Math.max(rowMin, Math.min(rowMax, rowH));
 
     els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", " + rowH + "px)";
-    // If even the widest packing can't fit the height, allow a gentle scroll
-    // so every button is still reachable.
-    els.valueGrid.style.overflowY = rows > maxRows ? "auto" : "hidden";
+    els.valueGrid.style.setProperty("--vbtn-h", rowH + "px");
+    els.valueGrid.style.setProperty("--vbtn-font", Math.round(Math.min(22, Math.max(14, rowH * 0.36))) + "px");
+    // If even the floor size can't fit every row, allow a gentle scroll so
+    // every button is still reachable.
+    var needed = rows * rowH + (rows - 1) * gap;
+    els.valueGrid.style.overflowY = needed > gh ? "auto" : "hidden";
   }
 
   function renderModePanes() {
@@ -813,9 +820,21 @@
     els.tabEntry.addEventListener("click", function () { showPage("entry"); });
     els.tabSummary.addEventListener("click", function () { showPage("summary"); });
 
-    window.addEventListener("resize", function () {
+    // Keep the app exactly as tall as the *visible* viewport so Safari / in-app
+    // browser chrome can never hide the bottom controls, and re-fill the value
+    // grid whenever that height changes.
+    function syncViewportHeight() {
+      var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      document.documentElement.style.setProperty("--app-h", h + "px");
+    }
+    function onViewportChange() {
+      syncViewportHeight();
       if (state.mode !== "manual") renderValueGrid();
-    });
+    }
+    syncViewportHeight();
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("orientationchange", onViewportChange);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 
     // First load: rebuild the value buttons from saved limits.
     rebuildGrid();
