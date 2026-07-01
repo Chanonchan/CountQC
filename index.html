@@ -10,7 +10,7 @@
   <title>Specification Recorder</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=27" />
+  <link rel="stylesheet" href="styles.css?v=28" />
 </head>
 <body>
   <div class="app">
@@ -91,9 +91,12 @@
           <button type="button" class="key key--fn" data-action="sign" aria-label="Toggle negative">±</button>
           <button type="button" class="key" data-key="0">0</button>
           <button type="button" class="key" data-key="." aria-label="Decimal point">.</button>
-          <button type="button" class="key key--space" data-action="space">Next #</button>
-          <button type="button" class="key key--back" data-action="back" aria-label="Backspace">⌫</button>
-          <button type="button" class="key key--enter" data-action="enter">Enter</button>
+        </div>
+
+        <div class="keypad-actions" id="keypadActions">
+          <button type="button" class="btn btn--ghost key-space" data-action="space">Next #</button>
+          <button type="button" class="btn btn--ghost key-back" data-action="back" aria-label="Backspace">⌫</button>
+          <button type="button" class="btn btn--add key-enter" data-action="enter">Enter</button>
         </div>
       </div>
 
@@ -173,6 +176,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>

@@ -127,7 +127,6 @@ body {
 }
 
 .page--entry .entry-actions .btn { padding: 9px; font-size: 14px; }
-.page--entry .keypad-actions .btn { padding: 11px; font-size: 15px; }
 .page--entry .spec-field { font-size: 10px; }
 .page--entry .spec-field input { padding: 7px 9px; font-size: 15px; }
 
@@ -306,16 +305,13 @@ body {
 }
 .key:active { transform: scale(0.95); background: #1c2740; }
 .key--fn { color: var(--muted); }
-/* Action keys sit in the keypad grid so they match the number-key height. */
-.key--space { color: var(--ink); font-size: 15px; }
-.key--back { color: var(--muted); font-size: 20px; }
-.key--enter { background: var(--teal); color: #fff; border-color: var(--teal); font-size: 18px; }
-.key--enter:active { background: var(--teal-dark); }
 
-.keypad-actions { display: flex; gap: 8px; }
-.key-space { flex: 1.2; font-size: 15px; }
+/* Action row: ~10% shorter than the number keys, with a wide Enter. */
+.keypad-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.page--entry .keypad-actions .btn { height: 50px; padding: 0; font-size: 16px; }
+.key-space { flex: 1; font-size: 15px; }
 .key-back { flex: 1; font-size: 20px; }
-.key-enter { flex: 2; }
+.key-enter { flex: 2; font-size: 18px; }
 
 /* ---------- Buttons ---------- */
 .btn {
