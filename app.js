@@ -675,32 +675,88 @@
     }
   }
 
+  // A full, readable report of everything on the Summary page: statistics,
+  // specification limits with under/in/over counts + percentages, the
+  // distribution, and the raw replications. Laid out in labelled sections
+  // with blank-line separators so it's easy to read in any spreadsheet.
   function buildCSV() {
     var s = stats(state.values);
     var d = distributionBins(s);
     var hasSpec = d && d.hasSpec;
 
-    // Input as a distribution: one row per Step increment with its count
-    // (and under/in/over region when a spec is set) — mirrors the histogram.
-    var lines = [hasSpec ? "value,count,region" : "value,count"];
+    // Wrap any field that might contain a comma so columns never break.
+    function esc(v) {
+      var str = (v === null || v === undefined) ? "" : String(v);
+      return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+    }
+    function val(x) { return s.n ? fmt(x) : ""; }
+
+    var lines = [];
+    lines.push("Specification Recorder — Summary");
+    lines.push("Record," + esc(state.recordName.trim()));
+    lines.push("");
+
+    // ----- Statistics (the stat cards) -----
+    lines.push("Statistics");
+    lines.push("Metric,Value");
+    lines.push("Replications," + (s.n || 0));
+    lines.push("Average," + val(s.avg));
+    lines.push("Median," + val(s.median));
+    lines.push("Mode," + (s.n ? (s.mode === null ? "none" : fmt(s.mode)) : ""));
+    lines.push("Minimum," + val(s.min));
+    lines.push("Maximum," + val(s.max));
+    lines.push("Range," + val(s.range));
+    lines.push("");
+
+    // ----- Specification limits + under/in/over counts and % -----
+    var n = s.n || 0;
+    var under = 0, over = 0;
+    if (hasSpec) {
+      for (var i = 0; i < state.values.length; i++) {
+        var v = state.values[i];
+        if (d.lsl !== null && v < d.lsl) under++;
+        else if (d.usl !== null && v > d.usl) over++;
+      }
+    }
+    var inSpec = n - under - over;
+    function pct(c) { return (hasSpec && n) ? (Math.round((c / n) * 1000) / 10) + "%" : ""; }
+
+    lines.push("Specification");
+    lines.push("Lower limit (LSL)," + (state.lsl === "" ? "not set" : state.lsl));
+    lines.push("Upper limit (USL)," + (state.usl === "" ? "not set" : state.usl));
+    lines.push("Category,Count,Percent");
+    lines.push("Under spec," + under + "," + pct(under));
+    lines.push("In spec," + inSpec + "," + pct(inSpec));
+    lines.push("Over spec," + over + "," + pct(over));
+    lines.push("Total," + n + "," + (hasSpec && n ? "100%" : ""));
+    lines.push("");
+
+    // ----- Distribution (one row per Step increment; mirrors the histogram) -----
+    lines.push("Distribution");
+    lines.push(hasSpec ? "Value,Count,Region" : "Value,Count");
     if (d) {
       d.bins.forEach(function (b) {
-        lines.push(hasSpec ? (b.lo.toFixed(d.dec) + "," + b.count + "," + b.cls)
+        var region = b.cls === "under" ? "Under" : b.cls === "over" ? "Over" : "In spec";
+        lines.push(hasSpec ? (b.lo.toFixed(d.dec) + "," + b.count + "," + region)
                            : (b.lo.toFixed(d.dec) + "," + b.count));
       });
     }
-
     lines.push("");
-    lines.push("name," + (state.recordName.replace(/,/g, " ") || ""));
-    lines.push("count," + (s.n || 0));
-    lines.push("average," + (s.n ? s.avg : ""));
-    lines.push("median," + (s.n ? s.median : ""));
-    lines.push("mode," + (s.n && s.mode !== null ? s.mode : ""));
-    lines.push("min," + (s.n ? s.min : ""));
-    lines.push("max," + (s.n ? s.max : ""));
-    lines.push("range," + (s.n ? s.range : ""));
-    lines.push("LSL," + state.lsl);
-    lines.push("USL," + state.usl);
+
+    // ----- All replications (in entry order) -----
+    lines.push("All replications");
+    lines.push(hasSpec ? "Replication,Value,Status" : "Replication,Value");
+    for (var k = 0; k < state.values.length; k++) {
+      var vv = state.values[k];
+      var status = "";
+      if (hasSpec) {
+        status = (d.lsl !== null && vv < d.lsl) ? "Under"
+               : (d.usl !== null && vv > d.usl) ? "Over" : "In spec";
+      }
+      lines.push(hasSpec ? ((k + 1) + "," + fmt(vv) + "," + status)
+                         : ((k + 1) + "," + fmt(vv)));
+    }
+
     return lines.join("\n");
   }
 
