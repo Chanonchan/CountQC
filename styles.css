@@ -306,6 +306,11 @@ body {
 }
 .key:active { transform: scale(0.95); background: #1c2740; }
 .key--fn { color: var(--muted); }
+/* Action keys sit in the keypad grid so they match the number-key height. */
+.key--space { color: var(--ink); font-size: 15px; }
+.key--back { color: var(--muted); font-size: 20px; }
+.key--enter { background: var(--teal); color: #fff; border-color: var(--teal); font-size: 18px; }
+.key--enter:active { background: var(--teal-dark); }
 
 .keypad-actions { display: flex; gap: 8px; }
 .key-space { flex: 1.2; font-size: 15px; }
