@@ -263,38 +263,49 @@
   }
 
   // Fill numbers down each column, adding columns across the width so they all
-  // stay on screen. The grid always fills the same fixed workspace (matching
-  // the manual keypad), so buttons grow when there are few values and shrink
-  // (with a floor) when there are many, rather than leaving dead space.
+  // stay on screen. Buttons always keep the same width:height rectangle as a
+  // manual-mode number key (3 equal columns at 56px tall), just scaled to
+  // whatever size lets them all fit the fixed workspace.
   function layoutValueGrid(n) {
-    if (!n) { els.valueGrid.style.gridTemplateRows = ""; els.valueGrid.style.overflowY = "hidden"; return; }
-    var gap = 8, minBtnW = 46, maxBtnW = 96, rowMin = 40, rowMax = 76;
+    if (!n) {
+      els.valueGrid.style.gridTemplateRows = "";
+      els.valueGrid.style.gridTemplateColumns = "";
+      els.valueGrid.style.overflowY = "hidden";
+      return;
+    }
+    var gap = 8, minW = 46, maxW = 150;
     var gw = els.valueGrid.clientWidth || ((window.innerWidth || 360) - 28);
     var gh = els.valueGrid.clientHeight || 240;
 
-    var colsMinW = Math.max(1, Math.ceil((gw + gap) / (maxBtnW + gap)));  // fewest cols before buttons get too wide
-    var colsMaxW = Math.max(1, Math.floor((gw + gap) / (minBtnW + gap))); // most cols before buttons get too narrow
+    // Manual key proportions: 3 equal columns at a 56px row.
+    var ratio = ((gw - 2 * gap) / 3) / 56;
+    if (!isFinite(ratio) || ratio <= 0) ratio = 2;
 
-    // Aim for a roughly square packing of the workspace, then respect width limits.
-    var cols = Math.round(Math.sqrt((n * gw) / gh)) || 1;
-    cols = Math.max(colsMinW, Math.min(colsMaxW, cols, n));
-
-    var rows = Math.ceil(n / cols);
-    var rowH = Math.floor((gh - (rows - 1) * gap) / rows);
-    // Too short for this many rows: add columns (fewer rows) until it fits.
-    while (rowH < rowMin && cols < colsMaxW) {
-      cols++;
+    var maxColsByWidth = Math.max(1, Math.floor((gw + gap) / (minW + gap)));
+    var cols = 1, cw = gw, ch = cw / ratio, rows = n, fit = false;
+    for (cols = 1; cols <= Math.max(maxColsByWidth, n); cols++) {
+      cw = (gw - (cols - 1) * gap) / cols;
+      if (cw < minW) { cols = Math.max(1, cols - 1); cw = (gw - (cols - 1) * gap) / cols; break; }
+      ch = cw / ratio;
       rows = Math.ceil(n / cols);
-      rowH = Math.floor((gh - (rows - 1) * gap) / rows);
+      var neededH = rows * ch + (rows - 1) * gap;
+      if (cw <= maxW && neededH <= gh) { fit = true; break; }
     }
-    rowH = Math.max(rowMin, Math.min(rowMax, rowH));
+    if (!fit) {
+      // Even the narrowest packing overflows: use as many columns as fit and scroll.
+      cols = Math.max(1, Math.min(maxColsByWidth, n));
+      cw = (gw - (cols - 1) * gap) / cols;
+      ch = cw / ratio;
+      rows = Math.ceil(n / cols);
+    }
 
-    els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", " + rowH + "px)";
-    els.valueGrid.style.setProperty("--vbtn-h", rowH + "px");
-    els.valueGrid.style.setProperty("--vbtn-font", Math.round(Math.min(22, Math.max(14, rowH * 0.36))) + "px");
-    // If even the floor size can't fit every row, allow a gentle scroll so
-    // every button is still reachable.
-    var needed = rows * rowH + (rows - 1) * gap;
+    els.valueGrid.style.gridTemplateColumns = "repeat(" + cols + ", " + cw.toFixed(2) + "px)";
+    els.valueGrid.style.gridAutoColumns = cw.toFixed(2) + "px";
+    els.valueGrid.style.gridTemplateRows = "repeat(" + rows + ", " + ch.toFixed(2) + "px)";
+    els.valueGrid.style.setProperty("--vbtn-font", Math.round(Math.min(22, Math.max(14, ch * 0.36))) + "px");
+    // If even the narrowest packing can't fit every row, allow a gentle scroll
+    // so every button is still reachable.
+    var needed = rows * ch + (rows - 1) * gap;
     els.valueGrid.style.overflowY = needed > gh ? "auto" : "hidden";
   }
 

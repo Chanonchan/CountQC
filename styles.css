@@ -193,7 +193,7 @@ body {
   min-height: 0;
   display: grid;
   grid-auto-flow: column;              /* numbers fill down, then next column */
-  grid-auto-columns: minmax(0, 1fr);   /* columns share the width; never overflow */
+  justify-content: center;             /* center the (fixed-ratio) buttons horizontally */
   align-content: start;
   gap: 8px;
   padding: 2px;
@@ -205,7 +205,7 @@ body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: var(--vbtn-h, 44px);         /* set per-render so buttons fill the workspace */
+  height: 100%;                        /* fills its grid cell, sized per-render to match the manual key ratio */
   line-height: 1;
   padding: 0;
   font-size: var(--vbtn-font, 17px);
