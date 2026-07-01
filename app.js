@@ -400,6 +400,42 @@
     return d > 0 && isFinite(d) ? Math.min(d, 6) : 0;
   }
 
+  // Shared distribution used by both the on-screen histogram and the CSV
+  // export, so the two can never disagree. One bin per Step increment (every
+  // value shows, no auto-binning jumps); each bin is classified under/in/over
+  // by the value it represents (its lower edge).
+  function distributionBins(s) {
+    if (!s.n) return null;
+    var lsl = state.lsl === "" ? null : Number(state.lsl);
+    var usl = state.usl === "" ? null : Number(state.usl);
+    if (lsl !== null && !isFinite(lsl)) lsl = null;
+    if (usl !== null && !isFinite(usl)) usl = null;
+    var hasSpec = lsl !== null || usl !== null;
+
+    var width = userStep();
+    var dec = decimalsOf(width);
+    var start = Number((Math.floor((s.min + 1e-9) / width) * width).toFixed(dec));
+    var count = Math.floor((s.max - start) / width + 1e-9) + 1;
+    if (count < 1) count = 1;
+    if (count > 250) count = 250; // safety cap
+    var bins = [];
+    for (var i = 0; i < count; i++) {
+      bins.push({ lo: Number((start + i * width).toFixed(dec)), count: 0 });
+    }
+    for (var k = 0; k < state.values.length; k++) {
+      var idx = Math.round((state.values[k] - start) / width);
+      if (idx < 0) idx = 0;
+      if (idx >= count) idx = count - 1;
+      bins[idx].count++;
+    }
+    bins.forEach(function (b) {
+      b.cls = !hasSpec ? "in"
+        : (lsl !== null && b.lo < lsl) ? "under"
+        : (usl !== null && b.lo > usl) ? "over" : "in";
+    });
+    return { bins: bins, dec: dec, lsl: lsl, usl: usl, hasSpec: hasSpec };
+  }
+
   function renderHistogram(s) {
     var host = els.histogram;
     host.innerHTML = "";
@@ -412,43 +448,12 @@
       return;
     }
 
-    var lsl = state.lsl === "" ? null : Number(state.lsl);
-    var usl = state.usl === "" ? null : Number(state.usl);
-    if (lsl !== null && !isFinite(lsl)) lsl = null;
-    if (usl !== null && !isFinite(usl)) usl = null;
-    var hasSpec = lsl !== null || usl !== null;
+    var d = distributionBins(s);
+    var bins = d.bins, dec = d.dec, lsl = d.lsl, usl = d.usl, hasSpec = d.hasSpec;
     els.histLegend.style.display = hasSpec ? "flex" : "none";
-
-    // One bin per Step increment so every value shows (no auto-binning jumps).
-    var width = userStep();
-    var dec = decimalsOf(width);
-
-    var start = Number((Math.floor((s.min + 1e-9) / width) * width).toFixed(dec));
-    var count = Math.floor((s.max - start) / width + 1e-9) + 1;
-    if (count < 1) count = 1;
-    if (count > 250) count = 250; // safety cap
-    var bins = [];
-    for (var i = 0; i < count; i++) {
-      var lo = Number((start + i * width).toFixed(dec));
-      bins.push({ lo: lo, count: 0 });
-    }
-    for (var k = 0; k < state.values.length; k++) {
-      var idx = Math.round((state.values[k] - start) / width);
-      if (idx < 0) idx = 0;
-      if (idx >= count) idx = count - 1;
-      bins[idx].count++;
-    }
 
     var maxCount = 0;
     bins.forEach(function (b) { if (b.count > maxCount) maxCount = b.count; });
-
-    // Classify a bin by the value it represents (its lower edge), so the
-    // colours line up exactly with the under/in/over spec counts.
-    function classify(v) {
-      if (lsl !== null && v < lsl) return "under";
-      if (usl !== null && v > usl) return "over";
-      return "in";
-    }
 
     function divider(label) {
       var d = document.createElement("div");
@@ -461,7 +466,7 @@
 
     var prevClass = null;
     bins.forEach(function (b) {
-      var cls = hasSpec ? classify(b.lo) : "in";
+      var cls = b.cls;
       // Separator lines between under / in / over regions.
       if (hasSpec && prevClass !== null) {
         if (prevClass === "under" && cls !== "under" && lsl !== null) {
@@ -671,11 +676,20 @@
   }
 
   function buildCSV() {
-    var lines = ["replication,value"];
-    for (var i = 0; i < state.values.length; i++) {
-      lines.push((i + 1) + "," + state.values[i]);
-    }
     var s = stats(state.values);
+    var d = distributionBins(s);
+    var hasSpec = d && d.hasSpec;
+
+    // Input as a distribution: one row per Step increment with its count
+    // (and under/in/over region when a spec is set) — mirrors the histogram.
+    var lines = [hasSpec ? "value,count,region" : "value,count"];
+    if (d) {
+      d.bins.forEach(function (b) {
+        lines.push(hasSpec ? (b.lo.toFixed(d.dec) + "," + b.count + "," + b.cls)
+                           : (b.lo.toFixed(d.dec) + "," + b.count));
+      });
+    }
+
     lines.push("");
     lines.push("name," + (state.recordName.replace(/,/g, " ") || ""));
     lines.push("count," + (s.n || 0));
