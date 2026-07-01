@@ -786,6 +786,9 @@
       return;
     }
     var csv = buildCSV();
+    // The record's name drives the file name and the share title, so exports
+    // are recognisable (falls back to the spec limits, then a generic label).
+    var displayName = state.recordName.trim() || specDisplay() || "Specification Recorder";
     var filename =
       (state.recordName.trim() || specDisplay() || "record_qc")
         .replace(/[^a-z0-9]+/gi, "_").toLowerCase() + ".csv";
@@ -796,14 +799,14 @@
     try {
       var file = new File([csv], filename, { type: "text/csv" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: "Record QC export" })
+        navigator.share({ files: [file], title: displayName })
           .catch(function () { /* user cancelled — no-op */ });
         return;
       }
     } catch (e) { /* File/share unsupported — fall through */ }
 
     if (navigator.share) {
-      navigator.share({ title: filename, text: csv })
+      navigator.share({ title: displayName, text: csv })
         .catch(function () { downloadCSV(csv, filename); });
       return;
     }
